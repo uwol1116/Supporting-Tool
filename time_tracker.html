@@ -84,6 +84,15 @@ btn,.btn{padding:7px 16px;border-radius:var(--r);border:.5px solid var(--border2
 .tip{font-size:12px;color:var(--text2);background:var(--bg2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;line-height:1.9}
 .tip strong{color:var(--text)}
 .empty{text-align:center;color:var(--text3);font-size:13px;padding:24px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg);border-radius:var(--rl);padding:20px 24px;width:min(560px,92vw);max-height:80vh;overflow-y:auto;border:.5px solid var(--border)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);padding:0;line-height:1}
+.modal-close:hover{color:var(--text)}
+.staff-detail-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border);font-size:13px}
+.staff-detail-row:last-child{border-bottom:none}
 .week-chip{display:inline-block;font-size:12px;background:var(--info-bg);color:var(--info-text);padding:2px 10px;border-radius:99px;font-weight:500}
 /* 드롭존 */
 .drop-zone{border:1.5px dashed var(--border2);border-radius:var(--rl);padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
@@ -247,6 +256,15 @@ btn,.btn{padding:7px 16px;border-radius:var(--r);border:.5px solid var(--border2
       <span class="msg" id="cfg-msg" style="margin-left:8px"></span>
     </div>
     <div class="card">
+      <div class="card-title">창립기념일 설정</div>
+      <div class="tip">창립기념일은 영업일 계산에서 제외됩니다. 매년 반복되므로 해당 연도 날짜를 직접 추가해주세요.</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <input type="date" id="founding-date" style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none">
+        <button class="btn primary" onclick="addFoundingDay()">추가</button>
+      </div>
+      <div id="founding-list" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+    <div class="card">
       <div class="card-title">예산 데이터 내보내기 / 불러오기</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">시간 데이터는 파일 업로드로 항상 새로 계산됩니다. 예산 설정값만 저장/불러옵니다.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -259,6 +277,17 @@ btn,.btn{padding:7px 16px;border-radius:var(--r);border:.5px solid var(--border2
   </div>
 </div>
 
+<!-- 프로젝트 상세 모달 -->
+<div class="modal-overlay" id="proj-modal" onclick="closeProjModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-proj-name"></div>
+      <button class="modal-close" onclick="document.getElementById('proj-modal').classList.remove('open')">×</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const SK = 'audit_v5';
@@ -266,13 +295,14 @@ const SK = 'audit_v5';
 // state: 예산(영구저장) + 현재파일 파싱결과(메모리)
 let state = {
   refDate: new Date().toISOString().slice(0,10),
-  projects: [],   // [{id, name, budget}]
+  projects: [],    // [{id, name, budget}]
+  foundingDays: [] // 창립기념일 날짜 목록 ['2025-05-20', ...]
 };
 let currentEntries = [];  // 현재 업로드된 파일의 파싱 결과 (메모리만)
 let pendingEntries = [];  // 미리보기 대기
 let currentFileName = '';
 
-function loadState() { try { const s=localStorage.getItem(SK); if(s) { const d=JSON.parse(s); state.refDate=d.refDate||state.refDate; state.projects=d.projects||[]; } } catch(e){} }
+function loadState() { try { const s=localStorage.getItem(SK); if(s) { const d=JSON.parse(s); state.refDate=d.refDate||state.refDate; state.projects=d.projects||[]; state.foundingDays=d.foundingDays||[]; } } catch(e){} }
 function saveState() { try { localStorage.setItem(SK,JSON.stringify({refDate:state.refDate,projects:state.projects})); } catch(e){} }
 
 // ── 날짜 유틸 ──
@@ -286,9 +316,74 @@ function fmtD(d) { return d?d.slice(5).replace('-','/'):'−'; }
 function r1(v) { return Math.round(v*10)/10; }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
+// 한국 공휴일 2024~2027 (설날·추석·대체공휴일 포함, 제헌절 포함)
+const KR_HOLIDAYS = new Set([
+  // 2024
+  '2024-01-01',                                          // 신정
+  '2024-02-09','2024-02-10','2024-02-11','2024-02-12',  // 설날+대체
+  '2024-03-01',                                          // 삼일절
+  '2024-05-01',                                          // 근로자의날
+  '2024-05-05','2024-05-06',                             // 어린이날+대체
+  '2024-05-15',                                          // 부처님오신날
+  '2024-06-06',                                          // 현충일
+  '2024-07-17',                                          // 제헌절
+  '2024-08-15',                                          // 광복절
+  '2024-09-16','2024-09-17','2024-09-18',               // 추석
+  '2024-10-03',                                          // 개천절
+  '2024-10-09',                                          // 한글날
+  '2024-12-25',                                          // 크리스마스
+  // 2025
+  '2025-01-01',                                          // 신정
+  '2025-01-28','2025-01-29','2025-01-30',               // 설날
+  '2025-03-01','2025-03-03',                             // 삼일절+대체
+  '2025-05-01',                                          // 근로자의날
+  '2025-05-05','2025-05-06',                             // 어린이날+대체
+  '2025-05-15',                                          // 부처님오신날
+  '2025-06-06',                                          // 현충일
+  '2025-07-17',                                          // 제헌절
+  '2025-08-15',                                          // 광복절
+  '2025-10-05','2025-10-06','2025-10-07','2025-10-08',  // 추석+대체
+  '2025-10-03',                                          // 개천절
+  '2025-10-09',                                          // 한글날
+  '2025-12-25',                                          // 크리스마스
+  // 2026
+  '2026-01-01',                                          // 신정
+  '2026-02-16','2026-02-17','2026-02-18','2026-02-19',  // 설날+대체
+  '2026-03-01','2026-03-02',                             // 삼일절+대체
+  '2026-05-01',                                          // 근로자의날
+  '2026-05-05',                                          // 어린이날
+  '2026-05-24','2026-05-25',                             // 부처님오신날+대체
+  '2026-06-06',                                          // 현충일
+  '2026-07-17',                                          // 제헌절
+  '2026-08-17',                                          // 광복절 대체
+  '2026-09-24','2026-09-25','2026-09-26',               // 추석
+  '2026-10-03','2026-10-05',                             // 개천절+대체
+  '2026-10-09',                                          // 한글날
+  '2026-12-25',                                          // 크리스마스
+  // 2027
+  '2027-01-01',                                          // 신정
+  '2027-02-06','2027-02-07','2027-02-08','2027-02-09',  // 설날+대체
+  '2027-03-01',                                          // 삼일절
+  '2027-05-01',                                          // 근로자의날
+  '2027-05-05',                                          // 어린이날
+  '2027-05-13',                                          // 부처님오신날
+  '2027-06-06',                                          // 현충일
+  '2027-07-17',                                          // 제헌절
+  '2027-08-16',                                          // 광복절 대체
+  '2027-09-14','2027-09-15','2027-09-16',               // 추석
+  '2027-10-03','2027-10-04',                             // 개천절+대체
+  '2027-10-09',                                          // 한글날
+  '2027-12-25','2027-12-27',                             // 크리스마스+대체
+]);
+
 function getBizDays(from, to) {
+  const allHolidays = new Set([...KR_HOLIDAYS, ...(state.foundingDays||[])]);
   const days=[],cur=new Date(from+'T00:00:00'),end=new Date(to+'T00:00:00');
-  while(cur<=end){const w=cur.getDay();if(w!==0&&w!==6)days.push(cur.toISOString().slice(0,10));cur.setDate(cur.getDate()+1);}
+  while(cur<=end){
+    const w=cur.getDay(), iso=cur.toISOString().slice(0,10);
+    if(w!==0&&w!==6&&!allHolidays.has(iso)) days.push(iso);
+    cur.setDate(cur.getDate()+1);
+  }
   return days;
 }
 function classifyEntry(e) {
@@ -301,7 +396,7 @@ function classifyEntry(e) {
 }
 
 // ── 파싱 ──
-const SKIP_KW = ['휴가','교육','블락','block','Block','지방선거','오전반차','오후반차','반차','LDAP'];
+const SKIP_KW = ['휴가','교육','블락','block','Block','지방선거','오전반차','오후반차','반차','LDAP','개천절','광복절','근로자의날','부처님오신날','신정','삼일절','설날','어린이날','제헌절','추석','크리스마스','한글날','대체공휴일','창립기념일'];
 
 function normalizeProj(raw) {
   let s = raw.trim();
@@ -611,11 +706,88 @@ function removeProject(id) {
 }
 
 // ── 설정 ──
+function addFoundingDay() {
+  const d = document.getElementById('founding-date').value;
+  if (!d) return;
+  if (!state.foundingDays.includes(d)) {
+    state.foundingDays.push(d);
+    state.foundingDays.sort();
+  }
+  document.getElementById('founding-date').value = '';
+  saveState(); renderFoundingDays();
+}
+function removeFoundingDay(d) {
+  state.foundingDays = state.foundingDays.filter(x => x !== d);
+  saveState(); renderFoundingDays();
+}
+function renderFoundingDays() {
+  const el = document.getElementById('founding-list');
+  el.innerHTML = state.foundingDays.length
+    ? state.foundingDays.map(d => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);padding:3px 8px;font-size:12px;margin:2px">${d}<button onclick="removeFoundingDay('${d}')" style="background:none;border:none;cursor:pointer;color:var(--danger-text);font-size:13px;padding:0;line-height:1">×</button></span>`).join('')
+    : '<span style="font-size:12px;color:var(--text3)">등록된 창립기념일 없음</span>';
+}
 function saveSettings() {
   const d = document.getElementById('cfg-date').value;
   if (!d) { showMsg('cfg-msg','날짜를 선택해주세요',true); return; }
   state.refDate = d; saveState(); refresh(); showMsg('cfg-msg','저장되었습니다',false);
 }
+function openProjModal(projName) {
+  // 해당 프로젝트의 직원별 완료/예정 집계
+  const sm = {};
+  for (const e of currentEntries) {
+    if (e.project !== projName) continue;
+    const {used, planned} = classifyEntry(e);
+    const k = `${e.name}||${e.rank}`;
+    if (!sm[k]) sm[k] = {name:e.name, rank:e.rank, used:0, planned:0};
+    sm[k].used += used; sm[k].planned += planned;
+  }
+  const RANK_ORDER = {'Director':0,'S.Manager':1,'Manager':2,'Senior':3,'Staff':4};
+  const rows = Object.values(sm).sort((a,b) => {
+    const ra = RANK_ORDER[a.rank]??99, rb = RANK_ORDER[b.rank]??99;
+    return ra!==rb ? ra-rb : a.name.localeCompare(b.name,['en','ko']);
+  });
+  document.getElementById('modal-proj-name').textContent = projName;
+  const body = document.getElementById('modal-body');
+  if (!rows.length) {
+    body.innerHTML = '<div class="empty">입력된 데이터가 없습니다</div>';
+  } else {
+    const proj = state.projects.find(p=>p.name===projName);
+    const budget = proj?.budget||null;
+    const totalUsed = rows.reduce((s,r)=>s+r.used,0);
+    const totalPlanned = rows.reduce((s,r)=>s+r.planned,0);
+    body.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
+        <thead><tr>
+          <th style="text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">이름</th>
+          <th style="text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">직급</th>
+          <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">완료(h)</th>
+          <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">예정(h)</th>
+          <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">합계(h)</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);font-weight:500">${r.name}</td>
+            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);color:var(--text2)">${r.rank}</td>
+            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;color:var(--danger-text)">${r1(r.used)}</td>
+            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;color:var(--warn-text)">${r1(r.planned)}</td>
+            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;font-weight:500">${r1(r.used+r.planned)}</td>
+          </tr>`).join('')}
+          <tr style="background:var(--bg2)">
+            <td colspan="2" style="padding:7px 8px;font-weight:600;font-size:12px">합계</td>
+            <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--danger-text)">${r1(totalUsed)}</td>
+            <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--warn-text)">${r1(totalPlanned)}</td>
+            <td style="padding:7px 8px;text-align:right;font-weight:600">${r1(totalUsed+totalPlanned)}${budget?` / ${budget}h`:''}</td>
+          </tr>
+        </tbody>
+      </table>`;
+  }
+  document.getElementById('proj-modal').classList.add('open');
+}
+function closeProjModal(e) {
+  if (e.target === document.getElementById('proj-modal'))
+    document.getElementById('proj-modal').classList.remove('open');
+}
+
 function showMsg(id, text, err) {
   const el = document.getElementById(id);
   el.textContent = text; el.className = err ? 'msg err' : 'msg ok';
@@ -711,7 +883,8 @@ function refresh() {
       }
       const usedPct = budget > 0 ? Math.min(100, v.used/budget*100).toFixed(1) : 0;
       const planPct = budget > 0 ? Math.min(100-usedPct, v.planned/budget*100).toFixed(1) : 0;
-      return `<div class="proj-card">
+      const nmEsc = nm.replace(/'/g,"\\'");
+      return `<div class="proj-card" onclick="openProjModal('${nmEsc}')" style="cursor:pointer">
         <div class="pcn">${nm} ${badgeHtml}</div>
         <div class="pcb">${budget !== null ? `예산 ${budget}h` : '예산 미설정'}</div>
         <div class="pnr">
@@ -774,6 +947,7 @@ function refresh() {
     </div>`).join('') : '<div class="empty">등록된 프로젝트가 없습니다</div>';
 
   document.getElementById('cfg-date').value = state.refDate || '';
+  renderFoundingDays();
 }
 
 function switchTab(tab) {
