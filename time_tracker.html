@@ -731,58 +731,101 @@ function saveSettings() {
   if (!d) { showMsg('cfg-msg','날짜를 선택해주세요',true); return; }
   state.refDate = d; saveState(); refresh(); showMsg('cfg-msg','저장되었습니다',false);
 }
+let _modalProjName = '';
+
 function openProjModal(projName) {
-  // 해당 프로젝트의 직원별 완료/예정 집계
+  _modalProjName = projName;
+  renderProjModal(projName, null);
+  document.getElementById('proj-modal').classList.add('open');
+}
+
+function renderProjModal(projName, expandedKey) {
+  const RANK_ORDER = {'Director':0,'S.Manager':1,'Manager':2,'Senior':3,'Staff':4};
+
+  // 직원별 집계 + 날짜별 원본 entries 보관
   const sm = {};
   for (const e of currentEntries) {
     if (e.project !== projName) continue;
     const {used, planned} = classifyEntry(e);
     const k = `${e.name}||${e.rank}`;
-    if (!sm[k]) sm[k] = {name:e.name, rank:e.rank, used:0, planned:0};
+    if (!sm[k]) sm[k] = {name:e.name, rank:e.rank, used:0, planned:0, entries:[]};
     sm[k].used += used; sm[k].planned += planned;
+    sm[k].entries.push({...e, _used:used, _planned:planned});
   }
-  const RANK_ORDER = {'Director':0,'S.Manager':1,'Manager':2,'Senior':3,'Staff':4};
   const rows = Object.values(sm).sort((a,b) => {
-    const ra = RANK_ORDER[a.rank]??99, rb = RANK_ORDER[b.rank]??99;
+    const ra=RANK_ORDER[a.rank]??99, rb=RANK_ORDER[b.rank]??99;
     return ra!==rb ? ra-rb : a.name.localeCompare(b.name,['en','ko']);
   });
+
   document.getElementById('modal-proj-name').textContent = projName;
   const body = document.getElementById('modal-body');
-  if (!rows.length) {
-    body.innerHTML = '<div class="empty">입력된 데이터가 없습니다</div>';
-  } else {
-    const proj = state.projects.find(p=>p.name===projName);
-    const budget = proj?.budget||null;
-    const totalUsed = rows.reduce((s,r)=>s+r.used,0);
-    const totalPlanned = rows.reduce((s,r)=>s+r.planned,0);
-    body.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
-        <thead><tr>
-          <th style="text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">이름</th>
-          <th style="text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">직급</th>
-          <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">완료(h)</th>
-          <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">예정(h)</th>
-          <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">합계(h)</th>
-        </tr></thead>
-        <tbody>
-          ${rows.map(r=>`<tr>
-            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);font-weight:500">${r.name}</td>
-            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);color:var(--text2)">${r.rank}</td>
-            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;color:var(--danger-text)">${r1(r.used)}</td>
-            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;color:var(--warn-text)">${r1(r.planned)}</td>
-            <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;font-weight:500">${r1(r.used+r.planned)}</td>
-          </tr>`).join('')}
-          <tr style="background:var(--bg2)">
-            <td colspan="2" style="padding:7px 8px;font-weight:600;font-size:12px">합계</td>
-            <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--danger-text)">${r1(totalUsed)}</td>
-            <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--warn-text)">${r1(totalPlanned)}</td>
-            <td style="padding:7px 8px;text-align:right;font-weight:600">${r1(totalUsed+totalPlanned)}${budget?` / ${budget}h`:''}</td>
-          </tr>
-        </tbody>
-      </table>`;
-  }
-  document.getElementById('proj-modal').classList.add('open');
+  if (!rows.length) { body.innerHTML = '<div class="empty">입력된 데이터가 없습니다</div>'; return; }
+
+  const proj = state.projects.find(p=>p.name===projName);
+  const budget = proj?.budget||null;
+  const totalUsed = rows.reduce((s,r)=>s+r.used,0);
+  const totalPlanned = rows.reduce((s,r)=>s+r.planned,0);
+
+  const rowsHtml = rows.map(r => {
+    const k = `${r.name}||${r.rank}`;
+    const isOpen = expandedKey === k;
+    const keyEsc = k.replace(/'/g,"\'");
+
+    // 날짜별 상세 rows
+    const detailRows = r.entries
+      .sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom))
+      .map(e => {
+        const dl = e.dateFrom===e.dateTo ? fmtD(e.dateFrom) : `${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
+        const biz = getBizDays(e.dateFrom, e.dateTo).length;
+        const usedC = e._used>0&&e._planned===0?'var(--danger-text)':e._used>0?'var(--text2)':'var(--text3)';
+        const planC = e._planned>0?'var(--warn-text)':'var(--text3)';
+        const lbl = e._used>0&&e._planned>0
+          ? `<span style="color:var(--danger-text)">${r1(e._used)}h</span> + <span style="color:var(--warn-text)">${r1(e._planned)}h</span>`
+          : e._used>0
+            ? `<span style="color:var(--danger-text)">완료 ${r1(e._used)}h</span>`
+            : `<span style="color:var(--warn-text)">예정 ${r1(e._planned)}h</span>`;
+        return `<tr style="background:var(--bg2)">
+          <td style="padding:4px 8px 4px 24px;border-bottom:.5px solid var(--border);font-size:12px;color:var(--text2)">${dl}</td>
+          <td style="padding:4px 8px;border-bottom:.5px solid var(--border);font-size:12px;color:var(--text3)">${biz}일</td>
+          <td style="padding:4px 8px;border-bottom:.5px solid var(--border);font-size:12px;color:var(--text2)">${e.hours}h 입력</td>
+          <td colspan="2" style="padding:4px 8px;border-bottom:.5px solid var(--border);font-size:12px">${lbl}</td>
+        </tr>`;
+      }).join('');
+
+    return `<tr style="cursor:pointer" onclick="renderProjModal('${_modalProjName.replace(/'/g,"\'")}','${keyEsc}')">
+      <td style="padding:7px 8px;border-bottom:.5px solid var(--border);font-weight:500">
+        <span style="display:inline-block;margin-right:5px;color:var(--text3);font-size:11px">${isOpen?'▼':'▶'}</span>${r.name}
+      </td>
+      <td style="padding:7px 8px;border-bottom:.5px solid var(--border);color:var(--text2)">${r.rank}</td>
+      <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;color:var(--danger-text)">${r1(r.used)}</td>
+      <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;color:var(--warn-text)">${r1(r.planned)}</td>
+      <td style="padding:7px 8px;border-bottom:.5px solid var(--border);text-align:right;font-weight:500">${r1(r.used+r.planned)}</td>
+    </tr>
+    ${isOpen ? detailRows : ''}`;
+  }).join('');
+
+  body.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
+      <thead><tr>
+        <th style="text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">이름</th>
+        <th style="text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">직급</th>
+        <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">완료(h)</th>
+        <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">예정(h)</th>
+        <th style="text-align:right;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)">합계(h)</th>
+      </tr></thead>
+      <tbody>
+        ${rowsHtml}
+        <tr style="background:var(--bg2)">
+          <td colspan="2" style="padding:7px 8px;font-weight:600;font-size:12px">합계</td>
+          <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--danger-text)">${r1(totalUsed)}</td>
+          <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--warn-text)">${r1(totalPlanned)}</td>
+          <td style="padding:7px 8px;text-align:right;font-weight:600">${r1(totalUsed+totalPlanned)}${budget?` / ${budget}h`:''}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:11px;color:var(--text3)">▶ 이름을 클릭하면 날짜별 상세를 볼 수 있습니다</div>`;
 }
+
 function closeProjModal(e) {
   if (e.target === document.getElementById('proj-modal'))
     document.getElementById('proj-modal').classList.remove('open');
