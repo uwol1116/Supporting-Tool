@@ -5,135 +5,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>감사 시간 관리 도구</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #ffffff; --bg2: #f5f5f3; --bg3: #ededeb;
-  --text: #1a1a18; --text2: #6b6b67; --text3: #9a9a96;
-  --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
-  --danger-bg: #FCEBEB; --danger-text: #A32D2D;
-  --warn-bg: #FAEEDA; --warn-text: #854F0B;
-  --success-bg: #EAF3DE; --success-text: #3B6D11;
-  --info-bg: #E6F1FB; --info-text: #185FA5;
-  --accent: #185FA5; --radius: 8px; --radius-lg: 12px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#ededeb;
+  --text:#1a1a18;--text2:#6b6b67;--text3:#9a9a96;
+  --border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);
+  --danger-bg:#FCEBEB;--danger-text:#A32D2D;
+  --warn-bg:#FAEEDA;--warn-text:#854F0B;
+  --success-bg:#EAF3DE;--success-text:#3B6D11;
+  --info-bg:#E6F1FB;--info-text:#185FA5;
+  --accent:#185FA5;--r:8px;--rl:12px
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1e1e1c; --bg2: #2a2a28; --bg3: #333331;
-    --text: #f0f0ee; --text2: #a8a8a4; --text3: #6b6b67;
-    --border: rgba(255,255,255,0.12); --border2: rgba(255,255,255,0.22);
-    --danger-bg: #501313; --danger-text: #F7C1C1;
-    --warn-bg: #412402; --warn-text: #FAC775;
-    --success-bg: #173404; --success-text: #C0DD97;
-    --info-bg: #042C53; --info-text: #B5D4F4;
-    --accent: #378ADD;
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333331;
+    --text:#f0f0ee;--text2:#a8a8a4;--text3:#6b6b67;
+    --border:rgba(255,255,255,.12);--border2:rgba(255,255,255,.22);
+    --danger-bg:#501313;--danger-text:#F7C1C1;
+    --warn-bg:#412402;--warn-text:#FAC775;
+    --success-bg:#173404;--success-text:#C0DD97;
+    --info-bg:#042C53;--info-text:#B5D4F4;
+    --accent:#378ADD
   }
 }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
-header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; }
-header h1 { font-size: 15px; font-weight: 600; }
-.chip { font-size: 12px; color: var(--text2); background: var(--bg2); padding: 2px 10px; border-radius: 99px; border: 0.5px solid var(--border); white-space: nowrap; }
-.main { max-width: 980px; margin: 0 auto; padding: 20px 16px; }
-.tab-bar { display: flex; gap: 3px; margin-bottom: 16px; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 4px; }
-.tab { flex: 1; padding: 7px 4px; font-size: 12px; border-radius: var(--radius); cursor: pointer; border: none; background: transparent; color: var(--text2); font-family: inherit; transition: all 0.15s; text-align: center; }
-.tab.active { background: var(--bg2); color: var(--text); font-weight: 500; }
-.tab:hover:not(.active) { color: var(--text); }
-.card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 12px; }
-.card-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
-.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-.metric { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
-.metric-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
-.metric-value { font-size: 20px; font-weight: 600; }
-.metric-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
-.used { color: var(--danger-text); } .planned { color: var(--warn-text); } .remain { color: var(--success-text); }
-.progress-wrap { height: 7px; background: var(--bg2); border-radius: 4px; overflow: hidden; display: flex; margin: 8px 0 5px; }
-.bar-used { background: var(--danger-text); height: 100%; transition: width 0.4s; }
-.bar-planned { background: var(--warn-text); height: 100%; transition: width 0.4s; }
-.bar-remain { flex: 1; background: var(--success-bg); height: 100%; }
-.legend { display: flex; gap: 14px; font-size: 11px; color: var(--text2); }
-.legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
-.proj-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-.proj-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; }
-.proj-card-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.proj-card-budget { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
-.proj-nums-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 6px; }
-.pnum { background: var(--bg2); border-radius: var(--radius); padding: 6px 4px; text-align: center; }
-.pnum-label { font-size: 10px; color: var(--text3); }
-.pnum-val { font-size: 14px; font-weight: 600; }
-.badge { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 99px; font-weight: 600; }
-.badge-over { background: var(--danger-bg); color: var(--danger-text); }
-.badge-ok { background: var(--success-bg); color: var(--success-text); }
-.badge-warn { background: var(--warn-bg); color: var(--warn-text); }
-.badge-nobudget { background: var(--bg2); color: var(--text3); border: 0.5px solid var(--border2); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; padding: 5px 8px; color: var(--text2); font-weight: 500; font-size: 12px; border-bottom: 0.5px solid var(--border2); }
-td { padding: 7px 8px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-.form-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-.form-row label { font-size: 12px; color: var(--text2); flex: 0 0 88px; }
-.form-row input, .form-row select { flex: 1; min-width: 100px; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.15s; }
-.form-row input:focus { border-color: var(--accent); }
-button.btn { padding: 7px 16px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-button.btn:hover { background: var(--bg2); }
-button.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-button.btn.primary:hover { opacity: 0.88; }
-button.btn.danger { color: var(--danger-text); border-color: rgba(163,45,45,0.3); }
-button.btn.danger:hover { background: var(--danger-bg); }
-button.btn.sm { padding: 3px 10px; font-size: 11px; }
-.msg { font-size: 12px; padding: 4px 0; color: var(--text2); }
-.msg.ok { color: var(--success-text); } .msg.err { color: var(--danger-text); }
-.entry-scroll { max-height: 260px; overflow-y: auto; }
-.entry-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 12px; border-bottom: 0.5px solid var(--border); }
-.entry-item:last-child { border-bottom: none; }
-.tip { font-size: 12px; color: var(--text2); background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; line-height: 1.9; }
-.tip strong { color: var(--text); }
-.empty { text-align: center; color: var(--text3); font-size: 13px; padding: 24px; }
-.week-chip { display: inline-block; font-size: 12px; background: var(--info-bg); color: var(--info-text); padding: 2px 10px; border-radius: 99px; font-weight: 500; }
-
-/* 파일 업로드 드롭존 */
-.drop-zone { border: 1.5px dashed var(--border2); border-radius: var(--radius-lg); padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
-.drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: var(--info-bg); }
-.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.drop-icon { font-size: 28px; margin-bottom: 8px; }
-.drop-label { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
-.drop-sub { font-size: 12px; color: var(--text2); }
-
-/* 파싱 결과 미리보기 */
-.preview-table-wrap { max-height: 220px; overflow-y: auto; border: 0.5px solid var(--border); border-radius: var(--radius); }
-.preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.preview-table th { position: sticky; top: 0; background: var(--bg2); padding: 5px 8px; text-align: left; font-weight: 500; color: var(--text2); border-bottom: 0.5px solid var(--border2); }
-.preview-table td { padding: 4px 8px; border-bottom: 0.5px solid var(--border); }
-.preview-table tr:last-child td { border-bottom: none; }
-
-/* 수동입력 */
-.range-row { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
-.range-row input[type=date] { flex: 1; min-width: 130px; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; font-size: 13px; outline: none; }
-.proj-input-wrap { display: flex; flex-direction: column; gap: 6px; }
-.proj-input-row { display: flex; gap: 6px; align-items: center; }
-.proj-input-row input[type=text] { flex: 1; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; font-size: 13px; outline: none; }
-.proj-input-row input[type=text]:focus { border-color: var(--accent); }
-.proj-input-row input[type=number] { width: 120px; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; font-size: 13px; outline: none; }
-.proj-rm-btn { padding: 5px 10px; border-radius: var(--radius); border: 0.5px solid var(--border); background: transparent; color: var(--danger-text); cursor: pointer; font-size: 14px; }
-.proj-rm-btn:hover { background: var(--danger-bg); }
-.proj-add-btn { padding: 5px 12px; font-size: 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; margin-top: 4px; font-family: inherit; }
-.proj-add-btn:hover { background: var(--bg2); }
-.alloc-hint { font-size: 12px; color: var(--info-text); background: var(--info-bg); border-radius: var(--radius); padding: 7px 12px; margin-top: 8px; min-height: 30px; }
-.budget-row { display: flex; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
-.budget-row:last-child { border-bottom: none; }
-.budget-name { flex: 1; font-size: 13px; font-weight: 500; }
-.budget-input { width: 100px; padding: 5px 8px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; font-size: 13px; outline: none; text-align: right; }
-.budget-input:focus { border-color: var(--accent); }
-
+body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+header{background:var(--bg);border-bottom:.5px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+header h1{font-size:15px;font-weight:600}
+.chip{font-size:12px;color:var(--text2);background:var(--bg2);padding:2px 10px;border-radius:99px;border:.5px solid var(--border);white-space:nowrap}
+.main{max-width:1000px;margin:0 auto;padding:20px 16px}
+.tab-bar{display:flex;gap:3px;margin-bottom:16px;background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);padding:4px}
+.tab{flex:1;padding:7px 4px;font-size:12px;border-radius:var(--r);cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;transition:all .15s;text-align:center}
+.tab.active{background:var(--bg2);color:var(--text);font-weight:500}
+.tab:hover:not(.active){color:var(--text)}
+.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);padding:16px 20px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.metric{background:var(--bg2);border-radius:var(--r);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:600}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.used{color:var(--danger-text)}.planned{color:var(--warn-text)}.remain{color:var(--success-text)}
+.pw{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden;display:flex;margin:8px 0 5px}
+.bu{background:var(--danger-text);height:100%;transition:width .4s}
+.bp{background:var(--warn-text);height:100%;transition:width .4s}
+.br{flex:1;background:var(--success-bg);height:100%}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--text2)}
+.ld{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.proj-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.proj-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);padding:14px 16px}
+.pcn{font-size:14px;font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pcb{font-size:12px;color:var(--text2);margin-bottom:10px}
+.pnr{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:6px}
+.pnum{background:var(--bg2);border-radius:var(--r);padding:6px 4px;text-align:center}
+.pnum-label{font-size:10px;color:var(--text3)}
+.pnum-val{font-size:14px;font-weight:600}
+.badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;font-weight:600}
+.badge-over{background:var(--danger-bg);color:var(--danger-text)}
+.badge-ok{background:var(--success-bg);color:var(--success-text)}
+.badge-warn{background:var(--warn-bg);color:var(--warn-text)}
+.badge-nb{background:var(--bg2);color:var(--text3);border:.5px solid var(--border2)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:5px 8px;color:var(--text2);font-weight:500;font-size:12px;border-bottom:.5px solid var(--border2)}
+td{padding:7px 8px;border-bottom:.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.form-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.form-row label{font-size:12px;color:var(--text2);flex:0 0 88px}
+.form-row input{flex:1;min-width:100px;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .15s}
+.form-row input:focus{border-color:var(--accent)}
+btn,.btn{padding:7px 16px;border-radius:var(--r);border:.5px solid var(--border2);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{opacity:.88}
+.btn.danger{color:var(--danger-text);border-color:rgba(163,45,45,.3)}
+.btn.danger:hover{background:var(--danger-bg)}
+.btn.sm{padding:3px 10px;font-size:11px}
+.msg{font-size:12px;padding:4px 0;color:var(--text2)}
+.msg.ok{color:var(--success-text)}.msg.err{color:var(--danger-text)}
+.tip{font-size:12px;color:var(--text2);background:var(--bg2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;line-height:1.9}
+.tip strong{color:var(--text)}
+.empty{text-align:center;color:var(--text3);font-size:13px;padding:24px}
+.week-chip{display:inline-block;font-size:12px;background:var(--info-bg);color:var(--info-text);padding:2px 10px;border-radius:99px;font-weight:500}
+/* 드롭존 */
+.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--rl);padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--info-bg)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:32px;margin-bottom:8px}
+.drop-label{font-size:14px;font-weight:500;margin-bottom:4px}
+.drop-sub{font-size:12px;color:var(--text2)}
 /* 로딩 */
-.loading { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); padding: 12px 0; }
-.spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);padding:12px 0}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* 미리보기 테이블 */
+.ptw{max-height:240px;overflow-y:auto;border:.5px solid var(--border);border-radius:var(--r)}
+.pt{width:100%;border-collapse:collapse;font-size:12px}
+.pt th{position:sticky;top:0;background:var(--bg2);padding:5px 8px;text-align:left;font-weight:500;color:var(--text2);border-bottom:.5px solid var(--border2)}
+.pt td{padding:4px 8px;border-bottom:.5px solid var(--border)}
+.pt tr:last-child td{border-bottom:none}
+/* 예산 */
+.budget-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:.5px solid var(--border)}
+.budget-row:last-child{border-bottom:none}
+.budget-name{flex:1;font-size:13px;font-weight:500}
+.budget-input{width:100px;padding:5px 8px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none;text-align:right}
+.budget-input:focus{border-color:var(--accent)}
 </style>
 </head>
 <body>
 <header>
   <h1>감사 시간 관리</h1>
   <span class="chip" id="hdr-week">기준 주차 미설정</span>
-  <span class="chip" id="hdr-entries" style="margin-left:auto">입력 0건</span>
+  <span class="chip" id="hdr-file" style="margin-left:auto">파일 미업로드</span>
 </header>
 
 <div class="main">
@@ -142,34 +123,29 @@ button.btn.sm { padding: 3px 10px; font-size: 11px; }
     <button class="tab" onclick="switchTab('projects')">프로젝트별</button>
     <button class="tab" onclick="switchTab('staff')">직원별</button>
     <button class="tab" onclick="switchTab('upload')">📂 엑셀 업로드</button>
-    <button class="tab" onclick="switchTab('manual')">수동 입력</button>
     <button class="tab" onclick="switchTab('budget')">예산 관리</button>
     <button class="tab" onclick="switchTab('settings')">설정</button>
   </div>
 
-  <!-- ── 전체 요약 ── -->
+  <!-- 전체 요약 -->
   <div id="tab-summary">
     <div class="card">
       <div class="card-title">전체 합계</div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">총 예산 합계</div><div class="metric-value" id="s-total" style="color:var(--text)">-</div><div class="metric-sub">시간 (전 프로젝트)</div></div>
-        <div class="metric"><div class="metric-label">투입 완료 (전주까지)</div><div class="metric-value used" id="s-used">0</div><div class="metric-sub">시간</div></div>
-        <div class="metric"><div class="metric-label">투입 예정 (이번주~)</div><div class="metric-value planned" id="s-planned">0</div><div class="metric-sub">시간</div></div>
+        <div class="metric"><div class="metric-label">투입 완료 (전주까지)</div><div class="metric-value used" id="s-used">-</div><div class="metric-sub">시간</div></div>
+        <div class="metric"><div class="metric-label">투입 예정 (이번주~)</div><div class="metric-value planned" id="s-planned">-</div><div class="metric-sub">시간</div></div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">잔여 — 현재 기준</div><div class="metric-value remain" id="s-remain-now">-</div><div class="metric-sub">총예산 − 완료</div></div>
         <div class="metric"><div class="metric-label">잔여 — 예정 포함</div><div class="metric-value remain" id="s-remain-all">-</div><div class="metric-sub">총예산 − 완료 − 예정</div></div>
         <div class="metric"><div class="metric-label">예산 소진율</div><div class="metric-value" id="s-pct" style="color:var(--text)">-</div><div class="metric-sub">완료+예정 / 총예산</div></div>
       </div>
-      <div class="progress-wrap">
-        <div class="bar-used" id="b-used" style="width:0%"></div>
-        <div class="bar-planned" id="b-planned" style="width:0%"></div>
-        <div class="bar-remain"></div>
-      </div>
+      <div class="pw"><div class="bu" id="b-used" style="width:0%"></div><div class="bp" id="b-planned" style="width:0%"></div><div class="br"></div></div>
       <div class="legend">
-        <span><span class="legend-dot" style="background:var(--danger-text)"></span>투입 완료</span>
-        <span><span class="legend-dot" style="background:var(--warn-text)"></span>투입 예정</span>
-        <span><span class="legend-dot" style="background:var(--success-bg);border:0.5px solid var(--border)"></span>잔여</span>
+        <span><span class="ld" style="background:var(--danger-text)"></span>투입 완료</span>
+        <span><span class="ld" style="background:var(--warn-text)"></span>투입 예정</span>
+        <span><span class="ld" style="background:var(--success-bg);border:.5px solid var(--border)"></span>잔여</span>
       </div>
     </div>
     <div class="card">
@@ -179,36 +155,35 @@ button.btn.sm { padding: 3px 10px; font-size: 11px; }
     </div>
   </div>
 
-  <!-- ── 프로젝트별 ── -->
+  <!-- 프로젝트별 -->
   <div id="tab-projects" style="display:none">
-    <div id="proj-cards-wrap"><div class="empty" style="background:var(--bg);border-radius:var(--radius-lg);padding:32px">데이터를 먼저 입력해주세요</div></div>
+    <div id="proj-cards-wrap"><div class="empty" style="background:var(--bg);border-radius:var(--rl);padding:32px">엑셀 파일을 업로드해주세요</div></div>
   </div>
 
-  <!-- ── 직원별 ── -->
+  <!-- 직원별 -->
   <div id="tab-staff" style="display:none">
     <div class="card">
       <div class="card-title">직원별 투입 시간</div>
       <table>
         <thead><tr><th>이름</th><th>직급</th><th style="text-align:right">완료(h)</th><th style="text-align:right">예정(h)</th><th style="text-align:right">합계(h)</th></tr></thead>
-        <tbody id="staff-tbody"><tr><td colspan="5" class="empty">데이터를 먼저 입력해주세요</td></tr></tbody>
+        <tbody id="staff-tbody"><tr><td colspan="5" class="empty">엑셀 파일을 업로드해주세요</td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ── 엑셀 업로드 ── -->
+  <!-- 엑셀 업로드 -->
   <div id="tab-upload" style="display:none">
     <div class="card">
       <div class="card-title">엑셀 파일 업로드</div>
       <div class="tip">
         <strong>원본 스케쥴 .xlsx 파일을 그대로 업로드하세요.</strong><br>
-        · 병합 셀을 자동으로 인식해 날짜 범위로 변환합니다<br>
-        · 헤더 행의 날짜(M/D 형식)와 성명·직급 컬럼을 자동으로 찾습니다<br>
-        · 휴가 / 교육 / 블락 / 지방선거 / 반차는 자동으로 무시됩니다<br>
-        · 매주 업데이트된 파일을 올리면 <strong>기존 내역에 추가</strong>됩니다 (중복 방지 옵션 있음)<br>
-        · 여러 Schedule 그룹(행 10, 23…)이 있어도 모두 읽습니다
+        · 행 1: 날짜(datetime) &nbsp;·&nbsp; 행 2: 요일 + 성명/직급 헤더 &nbsp;·&nbsp; 행 3~: 데이터<br>
+        · 병합 셀 자동 인식 → 날짜 범위로 변환 → 영업일(월~금) × 8h 계산<br>
+        · <strong>매주 새 파일을 올리면 그 파일 기준으로 다시 계산</strong>합니다 (누적 아님)<br>
+        · 프로젝트명 자동 정규화: <code>하나카드</code> = <code>하나카드(2H)</code> = <code>하나카드2H</code>
       </div>
       <div class="drop-zone" id="drop-zone">
-        <input type="file" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+        <input type="file" accept=".xlsx,.xls" onchange="handleFile(event)">
         <div class="drop-icon">📊</div>
         <div class="drop-label">클릭하거나 파일을 드래그하세요</div>
         <div class="drop-sub">.xlsx / .xls 파일</div>
@@ -216,92 +191,42 @@ button.btn.sm { padding: 3px 10px; font-size: 11px; }
       <div id="upload-status" style="margin-top:10px"></div>
     </div>
 
-    <!-- 파싱 미리보기 -->
+    <!-- 미리보기 -->
     <div class="card" id="preview-card" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin:0">파싱 결과 미리보기 <span id="preview-count" style="color:var(--accent)"></span></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer">
-            <input type="checkbox" id="dedup-check" checked> 날짜+이름+프로젝트 중복 건너뛰기
-          </label>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">파싱 결과 <span id="preview-count" style="color:var(--accent)"></span></div>
       </div>
-      <div class="preview-table-wrap">
-        <table class="preview-table">
-          <thead><tr><th>날짜 범위</th><th>이름</th><th>직급</th><th>프로젝트</th><th style="text-align:right">시간(h)</th><th>구분</th></tr></thead>
+      <div class="ptw">
+        <table class="pt">
+          <thead><tr><th>날짜 범위</th><th>영업일</th><th>이름</th><th>직급</th><th>프로젝트</th><th style="text-align:right">시간(h)</th><th>구분</th></tr></thead>
           <tbody id="preview-tbody"></tbody>
         </table>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
-        <button class="btn primary" onclick="confirmImport()">이 내역 추가</button>
+        <button class="btn primary" onclick="applyParsed()">적용</button>
         <button class="btn" onclick="cancelPreview()">취소</button>
-        <span class="msg" id="import-msg"></span>
+        <span class="msg" id="apply-msg"></span>
       </div>
     </div>
 
-    <!-- 업로드된 파일 내역 -->
-    <div class="card">
+    <!-- 현재 적용된 내역 -->
+    <div class="card" id="entries-card" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="card-title" style="margin:0">입력 내역 <span id="entry-count" style="color:var(--accent)">0</span>건</div>
-        <button class="btn sm danger" onclick="clearEntries()">내역 초기화</button>
+        <div class="card-title" style="margin:0">현재 적용 내역 <span id="entry-count" style="color:var(--accent)">0</span>건</div>
+        <div style="font-size:12px;color:var(--text2)" id="applied-file"></div>
       </div>
-      <div class="entry-scroll" id="entry-list"><div class="empty">없음</div></div>
+      <div style="max-height:260px;overflow-y:auto" id="entry-list"></div>
     </div>
   </div>
 
-  <!-- ── 수동 입력 ── -->
-  <div id="tab-manual" style="display:none">
-    <div class="card">
-      <div class="card-title">수동 입력</div>
-      <div class="tip">
-        엑셀 업로드로 처리되지 않는 건을 직접 입력합니다.<br>
-        <strong>병합 셀 = 날짜 범위 선택</strong> → 영업일(월~금) × 8h 자동 계산<br>
-        여러 프로젝트 → 총 시간 균등 배분 (시간 직접 지정 우선)
-      </div>
-      <div class="form-row">
-        <label>이름</label>
-        <input type="text" id="m-name" placeholder="홍길동">
-        <input type="text" id="m-rank" placeholder="직급" style="flex:0 0 140px">
-      </div>
-      <div class="form-row">
-        <label>날짜 범위</label>
-        <div class="range-row">
-          <input type="date" id="m-date-from">
-          <span style="color:var(--text2)">~</span>
-          <input type="date" id="m-date-to">
-          <span id="m-biz-days" style="font-size:12px;color:var(--info-text);white-space:nowrap;font-weight:500"></span>
-        </div>
-      </div>
-      <div class="form-row" style="align-items:flex-start">
-        <label style="padding-top:8px">프로젝트</label>
-        <div style="flex:1">
-          <div class="proj-input-wrap" id="proj-inputs">
-            <div class="proj-input-row">
-              <input type="text" placeholder="프로젝트명" class="pname" list="proj-datalist">
-              <input type="number" placeholder="시간 (빈칸=균등)" min="0.5" step="0.5" class="phours">
-              <button class="proj-rm-btn" onclick="removeProjRow(this)">−</button>
-            </div>
-          </div>
-          <datalist id="proj-datalist"></datalist>
-          <button class="proj-add-btn" onclick="addProjRow()">+ 프로젝트 추가</button>
-          <div class="alloc-hint" id="alloc-hint">날짜와 프로젝트를 입력하면 배분 결과가 표시됩니다</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
-        <button class="btn primary" onclick="addManual()">추가</button>
-        <span class="msg" id="manual-msg"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 예산 관리 ── -->
+  <!-- 예산 관리 -->
   <div id="tab-budget" style="display:none">
     <div class="card">
-      <div class="card-title">프로젝트 등록 및 예산 설정</div>
-      <div class="tip">예산을 모르는 경우 비워두면 투입 시간만 집계됩니다. 시간 입력 및 업로드 시 자동으로 등록되기도 합니다.</div>
+      <div class="card-title">프로젝트 예산 설정</div>
+      <div class="tip">프로젝트별 총 감사 예산(h)을 입력하세요. 파일 업로드 시 인식된 프로젝트는 자동으로 추가됩니다. 예산을 모르는 경우 비워두면 투입 시간만 집계됩니다.</div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <input type="text" id="new-proj-name" placeholder="프로젝트명" style="flex:1;min-width:140px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none;">
-        <input type="number" id="new-proj-budget" placeholder="예산(h)" min="0" style="width:120px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none;">
+        <input type="text" id="new-proj-name" placeholder="프로젝트명" style="flex:1;min-width:140px;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none">
+        <input type="number" id="new-proj-budget" placeholder="예산(h)" min="0" style="width:110px;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none">
         <button class="btn primary" onclick="addProject()">등록</button>
         <span class="msg" id="proj-msg"></span>
       </div>
@@ -309,10 +234,11 @@ button.btn.sm { padding: 3px 10px; font-size: 11px; }
     </div>
   </div>
 
-  <!-- ── 설정 ── -->
+  <!-- 설정 -->
   <div id="tab-settings" style="display:none">
     <div class="card">
       <div class="card-title">조회 기준 날짜</div>
+      <div class="tip">이 날짜 기준으로 해당 주 이전은 <strong style="color:var(--danger-text)">완료</strong>, 해당 주부터는 <strong style="color:var(--warn-text)">예정</strong>으로 분류됩니다.</div>
       <div class="form-row">
         <label>기준 날짜</label>
         <input type="date" id="cfg-date">
@@ -321,34 +247,37 @@ button.btn.sm { padding: 3px 10px; font-size: 11px; }
       <span class="msg" id="cfg-msg" style="margin-left:8px"></span>
     </div>
     <div class="card">
-      <div class="card-title">데이터 내보내기 / 불러오기</div>
+      <div class="card-title">예산 데이터 내보내기 / 불러오기</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">시간 데이터는 파일 업로드로 항상 새로 계산됩니다. 예산 설정값만 저장/불러옵니다.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="exportData()">JSON 내보내기</button>
-        <button class="btn" onclick="document.getElementById('import-json-file').click()">JSON 불러오기</button>
-        <input type="file" id="import-json-file" accept=".json" style="display:none" onchange="importJSON(event)">
+        <button class="btn" onclick="exportBudget()">예산 내보내기</button>
+        <button class="btn" onclick="document.getElementById('import-budget-file').click()">예산 불러오기</button>
+        <input type="file" id="import-budget-file" accept=".json" style="display:none" onchange="importBudget(event)">
       </div>
       <div class="msg" id="io-msg" style="margin-top:6px"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">전체 초기화</div>
-      <button class="btn danger" onclick="clearAll()">모든 데이터 초기화</button>
     </div>
   </div>
 </div>
 
-<!-- SheetJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const SK = 'audit_v4';
-let state = { refDate: new Date().toISOString().slice(0,10), projects: [], entries: [] };
-let pendingEntries = []; // 업로드 후 확인 전 임시
+const SK = 'audit_v5';
 
-function loadState() { try { const s=localStorage.getItem(SK); if(s) state=JSON.parse(s); } catch(e){} }
-function saveState() { try { localStorage.setItem(SK,JSON.stringify(state)); } catch(e){} }
+// state: 예산(영구저장) + 현재파일 파싱결과(메모리)
+let state = {
+  refDate: new Date().toISOString().slice(0,10),
+  projects: [],   // [{id, name, budget}]
+};
+let currentEntries = [];  // 현재 업로드된 파일의 파싱 결과 (메모리만)
+let pendingEntries = [];  // 미리보기 대기
+let currentFileName = '';
+
+function loadState() { try { const s=localStorage.getItem(SK); if(s) { const d=JSON.parse(s); state.refDate=d.refDate||state.refDate; state.projects=d.projects||[]; } } catch(e){} }
+function saveState() { try { localStorage.setItem(SK,JSON.stringify({refDate:state.refDate,projects:state.projects})); } catch(e){} }
 
 // ── 날짜 유틸 ──
 function getWeekMon(ds) {
-  const d=new Date(ds+'T00:00:00'), day=d.getDay();
+  const d=new Date(ds+'T00:00:00'),day=d.getDay();
   const m=new Date(d); m.setDate(d.getDate()+(day===0?-6:1-day));
   return m.toISOString().slice(0,10);
 }
@@ -358,8 +287,8 @@ function r1(v) { return Math.round(v*10)/10; }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
 function getBizDays(from, to) {
-  const days=[], cur=new Date(from+'T00:00:00'), end=new Date(to+'T00:00:00');
-  while(cur<=end){ const w=cur.getDay(); if(w!==0&&w!==6) days.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+  const days=[],cur=new Date(from+'T00:00:00'),end=new Date(to+'T00:00:00');
+  while(cur<=end){const w=cur.getDay();if(w!==0&&w!==6)days.push(cur.toISOString().slice(0,10));cur.setDate(cur.getDate()+1);}
   return days;
 }
 function classifyEntry(e) {
@@ -367,196 +296,242 @@ function classifyEntry(e) {
   if(!days.length) return {used:0,planned:0};
   const hpd=e.hours/days.length;
   let used=0,planned=0;
-  for(const d of days){ if(isPast(d)) used+=hpd; else planned+=hpd; }
-  return {used:Math.round(used*100)/100, planned:Math.round(planned*100)/100};
+  for(const d of days){if(isPast(d))used+=hpd;else planned+=hpd;}
+  return {used:Math.round(used*100)/100,planned:Math.round(planned*100)/100};
 }
 
-// ── SKIP 키워드 ──
-const SKIP_KW = ['휴가','교육','블락','block','지방선거','오전반차','오후반차','반차','LDAP','Block'];
-function shouldSkip(cell) {
-  if(!cell) return true;
-  const t=String(cell).trim();
-  if(!t) return true;
-  // 괄호 숫자가 있으면 프로젝트로 간주 (시간 명시)
-  if(t.match(/\(\d+\)/)) return false;
-  return SKIP_KW.some(kw=>t.includes(kw));
+// ── 파싱 ──
+const SKIP_KW = ['휴가','교육','블락','block','Block','지방선거','오전반차','오후반차','반차','LDAP'];
+
+function normalizeProj(raw) {
+  let s = raw.trim();
+  // (ITAC), (AC), (영문) 같은 업무코드 제거
+  s = s.replace(/\([A-Za-z]+\)/g, '');
+  // 숫자H 패턴 제거 (2H, 24H, 2h 등) — 이미 시간으로 추출됨
+  s = s.replace(/\d+\s*[Hh]\b/g, '');
+  // 남은 괄호, 숫자 suffix 제거
+  s = s.replace(/[()]/g, '');
+  return s.trim();
 }
 
-// ── 셀 내용 파싱 → [{name, hours}] ──
-function parseCell(cell) {
-  if(!cell) return [];
-  const t=String(cell).trim();
-  if(!t) return [];
-  if(shouldSkip(t)) return [];
-  const results=[];
-  for(const part of t.split('/')) {
-    const p=part.trim(); if(!p) continue;
-    if(SKIP_KW.some(kw=>p.includes(kw))&&!p.match(/\(\d+\)/)) continue;
-    const ac=p.match(/^(.+?)\(AC\)$/i);
-    if(ac){ results.push({name:ac[1].trim(),hours:8}); continue; }
-    const hr=p.match(/^(.+?)\((\d+)\)$/);
-    if(hr){ results.push({name:hr[1].trim(),hours:parseInt(hr[2])}); continue; }
-    results.push({name:p,hours:null}); // null = 균등배분
+function parseCell(cellVal) {
+  if (!cellVal) return [];
+  const t = String(cellVal).trim();
+  if (!t) return [];
+  if (SKIP_KW.some(kw => t.includes(kw))) return [];
+
+  // 구분자 정규화: / 와 , → |
+  let t2 = t.replace(/[,\/]/g, '|');
+
+  // "BB증권 30H CC증권 10H" 처럼 공백만으로 구분된 경우 분리
+  // 숫자H 뒤에 공백+한글이 오면 구분자 삽입
+  t2 = t2.replace(/(\d+\s*[Hh])\s+(?=[^\d|])/g, '$1|');
+
+  const parts = t2.split('|').map(p=>p.trim()).filter(Boolean);
+  const results = [];
+
+  for (const part of parts) {
+    if (!part) continue;
+    if (SKIP_KW.some(kw => part.includes(kw))) continue;
+
+    let hours = null, rawName = part;
+
+    // 숫자H 패턴 (24H, 2H, 2h)
+    const hrM = part.match(/(\d+)\s*[Hh]\b/);
+    // (숫자) 패턴
+    const parenM = !hrM ? part.match(/\((\d+)\)/) : null;
+    // 끝에 숫자만 (AA은행 4)
+    const plainM = (!hrM && !parenM) ? part.match(/^(.+?)\s+(\d+)\s*$/) : null;
+
+    if (hrM) {
+      hours = parseInt(hrM[1]);
+      rawName = part.slice(0, hrM.index);
+    } else if (parenM) {
+      hours = parseInt(parenM[1]);
+      rawName = part.slice(0, parenM.index);
+    } else if (plainM) {
+      hours = parseInt(plainM[2]);
+      rawName = plainM[1];
+    }
+
+    const name = normalizeProj(rawName);
+    if (name) results.push({ name, hours });
   }
   return results;
 }
 
-// ── xlsxDate → ISO ──
-function xlsxDateToISO(serial) {
-  // Excel 날짜 시리얼 → JS Date
-  const utc=new Date((serial - 25569) * 86400 * 1000);
-  const y=utc.getUTCFullYear(), m=String(utc.getUTCMonth()+1).padStart(2,'0'), d=String(utc.getUTCDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
-}
-
-// ── 엑셀 파싱 핵심 ──
+// ── XLSX 파싱 ──
 function parseXLSX(buffer) {
-  const wb = XLSX.read(buffer, {type:'array', cellDates:false, sheetStubs:true});
-  const results = [];
+  const wb = XLSX.read(buffer, { type:'array', cellDates:false, sheetStubs:true });
+  const allEntries = [];
 
-  for(const sheetName of wb.SheetNames) {
+  for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
-    if(!ws['!ref']) continue;
+    if (!ws['!ref']) continue;
     const range = XLSX.utils.decode_range(ws['!ref']);
     const merges = ws['!merges'] || [];
 
-    // 셀 값 읽기 헬퍼
-    function cellVal(r,c) {
-      const addr=XLSX.utils.encode_cell({r,c});
-      const cell=ws[addr];
-      if(!cell) return null;
-      if(cell.t==='n' && cell.v>10000) return xlsxDateToISO(cell.v); // 날짜 시리얼
-      return cell.v!=null?String(cell.v).trim():null;
+    // 셀값 읽기
+    function cv(r, c) {
+      const addr = XLSX.utils.encode_cell({r,c});
+      const cell = ws[addr];
+      if (!cell || cell.v == null) return null;
+      if (cell.t === 'n' && cell.v > 40000) {
+        const d = new Date((cell.v - 25569) * 86400000);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+      }
+      return String(cell.v).trim();
     }
 
-    // 병합 범위에서 특정 셀이 속하는 범위 찾기
-    function getMergeRange(r,c) {
-      for(const m of merges) {
-        if(r>=m.s.r&&r<=m.e.r&&c>=m.s.c&&c<=m.e.c) return m;
-      }
-      return null;
+    // 병합 범위 조회
+    function getMerge(r, c) {
+      return merges.find(m => r>=m.s.r && r<=m.e.r && c>=m.s.c && c<=m.e.c) || null;
     }
 
-    // 헤더 행 탐색 (성명/이름 컬럼 찾기)
-    // 여러 Schedule 그룹이 있을 수 있으므로 전체 행 스캔
-    const headerRows = []; // [{row, nameCol, rankCol, dateCols:[{col, dateStr}]}]
-
-    for(let r=range.s.r; r<=range.e.r; r++) {
-      let nameCol=-1, rankCol=-1;
-      for(let c=range.s.c; c<=range.e.c; c++) {
-        const v=cellVal(r,c);
-        if(v==='성명'||v==='이름') nameCol=c;
-        if(v==='직급') rankCol=c;
+    // 헤더 행 찾기: "성명" 또는 "이름" 이 있는 행
+    const headerRows = [];
+    for (let r = range.s.r; r <= range.e.r; r++) {
+      let nameCol = -1, rankCol = -1;
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const v = cv(r, c);
+        if (v === '성명' || v === '이름') nameCol = c;
+        if (v === '직급') rankCol = c;
       }
-      if(nameCol<0) continue;
+      if (nameCol < 0) continue;
 
-      // 날짜 컬럼 찾기 (같은 행 또는 한 행 위/아래)
-      const dateCols=[];
-      for(let c=range.s.c; c<=range.e.c; c++) {
-        const v=cellVal(r,c);
-        if(!v) continue;
-        // M/D 형식
-        const md=String(v).match(/^(\d{1,2})\/(\d{1,2})$/);
-        if(md) {
-          const yr=new Date().getFullYear();
-          dateCols.push({col:c, dateStr:`${yr}-${String(md[1]).padStart(2,'0')}-${String(md[2]).padStart(2,'0')}`});
+      // 날짜 컬럼: 이 행 또는 바로 위 행에서 날짜 찾기
+      const dateCols = [];
+      for (let searchR of [r, r-1]) {
+        if (searchR < range.s.r) continue;
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const v = cv(searchR, c);
+          if (!v) continue;
+          // ISO date (연도 이상값 보정: 현재 연도±1 범위 벗어나면 현재 연도로 교정)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+            const curYr = new Date().getFullYear();
+            const parsedYr = parseInt(v.slice(0,4));
+            const fixed = Math.abs(parsedYr - curYr) > 1 ? `${curYr}${v.slice(4)}` : v;
+            dateCols.push({ col: c, dateStr: fixed });
+          }
+          // M/D 형식
+          const md = v.match(/^(\d{1,2})\/(\d{1,2})$/);
+          if (md) {
+            const yr = new Date().getFullYear();
+            dateCols.push({ col: c, dateStr: `${yr}-${String(md[1]).padStart(2,'0')}-${String(md[2]).padStart(2,'0')}` });
+          }
         }
-        // ISO 날짜
-        const iso=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if(iso) dateCols.push({col:c, dateStr:v});
+        if (dateCols.length > 0) break;
       }
-
-      if(dateCols.length>0) headerRows.push({row:r, nameCol, rankCol, dateCols});
+      // 날짜 연속성 보정: 인접 날짜 간 차이가 180일 초과 시 연도 교정
+      for (let i = 1; i < dateCols.length; i++) {
+        const prev = new Date(dateCols[i-1].dateStr + 'T00:00:00Z');
+        const cur2 = new Date(dateCols[i].dateStr + 'T00:00:00Z');
+        const diffDays = (cur2 - prev) / 86400000;
+        if (Math.abs(diffDays) > 180) {
+          // 연도를 이전 날짜 기준으로 교정
+          const corrected = new Date(prev);
+          corrected.setUTCFullYear(prev.getUTCFullYear());
+          const ds = dateCols[i].dateStr;
+          const fixedYr = prev.getUTCFullYear() + (diffDays > 0 && diffDays > 180 ? 1 : 0);
+          dateCols[i].dateStr = `${fixedYr}-${ds.slice(5)}`;
+          // 교정 후에도 이상하면 이전 날짜로 대체
+          const cur3 = new Date(dateCols[i].dateStr + 'T00:00:00Z');
+          if (Math.abs((cur3 - prev) / 86400000) > 30) dateCols[i].dateStr = dateCols[i-1].dateStr;
+        }
+      }
+      if (dateCols.length > 0) headerRows.push({ row: r, nameCol, rankCol, dateCols });
     }
 
-    // 각 헤더 그룹의 데이터 행 처리
-    for(let hi=0; hi<headerRows.length; hi++) {
-      const hdr=headerRows[hi];
-      const nextHdrRow=hi+1<headerRows.length?headerRows[hi+1].row:range.e.r+1;
+    // 각 헤더 그룹 처리
+    for (let hi = 0; hi < headerRows.length; hi++) {
+      const hdr = headerRows[hi];
+      const nextHdrRow = hi+1 < headerRows.length ? headerRows[hi+1].row : range.e.r+1;
 
-      for(let r=hdr.row+1; r<nextHdrRow && r<=range.e.r; r++) {
-        const name=cellVal(r, hdr.nameCol);
-        if(!name||name==='성명'||name==='이름'||name==='#') continue;
-        // 번호 행(숫자만) 스킵
-        if(/^\d+$/.test(name)) continue;
+      for (let r = hdr.row+1; r < nextHdrRow && r <= range.e.r; r++) {
+        const name = cv(r, hdr.nameCol);
+        if (!name || /^\d+$/.test(name) || name === '성명' || name === '이름') continue;
 
-        const rank=hdr.rankCol>=0?cellVal(r,hdr.rankCol)||'':'';
+        const rank = hdr.rankCol >= 0 ? (cv(r, hdr.rankCol) || '') : '';
 
-        for(const {col, dateStr} of hdr.dateCols) {
-          const rawCell=cellVal(r,col);
+        for (const { col, dateStr } of hdr.dateCols) {
+          const merge = getMerge(r, col);
 
-          // 병합 셀 처리: 이 셀이 병합의 좌상단인지 확인
-          const mergeR=getMergeRange(r,col);
-          let dateFrom=dateStr, dateTo=dateStr;
+          // 병합 셀의 기준(좌상단)이 아닌 셀은 건너뜀
+          if (merge && !(merge.s.r === r && merge.s.c === col)) continue;
 
-          if(mergeR && mergeR.s.r===r && mergeR.s.c===col) {
-            // 병합 범위의 끝 열의 날짜 찾기
-            const lastDateCol=hdr.dateCols.filter(d=>d.col>=mergeR.s.c&&d.col<=mergeR.e.c);
-            if(lastDateCol.length>0) {
-              dateFrom=lastDateCol[0].dateStr;
-              dateTo=lastDateCol[lastDateCol.length-1].dateStr;
+          // 실제 값
+          const rawVal = cv(r, col);
+          if (!rawVal) continue;
+
+          // 날짜 범위 결정
+          let dateFrom = dateStr, dateTo = dateStr;
+          if (merge) {
+            const colsInMerge = hdr.dateCols.filter(d => d.col >= merge.s.c && d.col <= merge.e.c);
+            if (colsInMerge.length > 0) {
+              dateFrom = colsInMerge[0].dateStr;
+              dateTo = colsInMerge[colsInMerge.length-1].dateStr;
             }
-          } else if(mergeR && !(mergeR.s.r===r && mergeR.s.c===col)) {
-            // 병합 셀의 비-기준 셀: 좌상단에서 이미 처리됨
-            continue;
           }
 
-          if(!rawCell) continue;
-          const projs=parseCell(rawCell);
-          if(!projs.length) continue;
+          const projs = parseCell(rawVal);
+          if (!projs.length) continue;
 
-          const bizDays=getBizDays(dateFrom,dateTo);
-          const totalH=bizDays.length*8;
+          // 날짜 역전 방지 (셀에 연도 오입력 등으로 dateTo < dateFrom인 경우)
+          if (dateTo < dateFrom) dateTo = dateFrom;
+          const bizDays = getBizDays(dateFrom, dateTo);
+          const totalH = bizDays.length * 8;
 
-          // 시간 명시된 것과 균등배분 분리
-          const fixedSum=projs.reduce((s,p)=>s+(p.hours!==null?p.hours:0),0);
-          const autoCount=projs.filter(p=>p.hours===null).length;
-          const autoH=autoCount>0?(totalH-fixedSum)/autoCount:0;
+          // 시간 배분
+          const fixedSum = projs.reduce((s,p) => s + (p.hours !== null ? p.hours : 0), 0);
+          const autoCount = projs.filter(p => p.hours === null).length;
+          const autoH = autoCount > 0 ? (totalH - fixedSum) / autoCount : 0;
 
-          for(const p of projs) {
-            const h=p.hours!==null?p.hours:autoH;
-            if(h<=0) continue;
-            results.push({
+          for (const p of projs) {
+            const h = p.hours !== null ? p.hours : autoH;
+            if (h <= 0) continue;
+            allEntries.push({
               name: name.trim(),
               rank: rank.trim(),
               dateFrom, dateTo,
               project: p.name,
-              hours: Math.round(h*100)/100,
-              _src: sheetName
+              hours: Math.round(h * 100) / 100
             });
           }
         }
       }
     }
   }
-  return results;
+  return allEntries;
 }
 
-// ── 파일 선택 처리 ──
-function handleFileSelect(e) { processFile(e.target.files[0]); e.target.value=''; }
+// ── 파일 처리 ──
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
 
-const dz=document.getElementById('drop-zone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);});
+function handleFile(e) { processFile(e.target.files[0]); e.target.value=''; }
 
 function processFile(file) {
-  if(!file) return;
-  const status=document.getElementById('upload-status');
-  status.innerHTML='<div class="loading"><div class="spinner"></div>파일 읽는 중...</div>';
-  document.getElementById('preview-card').style.display='none';
+  if (!file) return;
+  currentFileName = file.name;
+  const status = document.getElementById('upload-status');
+  status.innerHTML = '<div class="loading"><div class="spinner"></div>파일 읽는 중...</div>';
+  document.getElementById('preview-card').style.display = 'none';
 
-  const reader=new FileReader();
-  reader.onload=function(e) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
     try {
-      const data=new Uint8Array(e.target.result);
-      const parsed=parseXLSX(data);
-      if(!parsed.length){ status.innerHTML='<div class="msg err">인식된 데이터가 없습니다. 헤더 행에 "성명"과 M/D 형식 날짜가 있는지 확인해주세요.</div>'; return; }
-      pendingEntries=parsed;
+      const parsed = parseXLSX(new Uint8Array(e.target.result));
+      if (!parsed.length) {
+        status.innerHTML = '<div class="msg err">인식된 데이터가 없습니다. 파일 형식을 확인해주세요.</div>';
+        return;
+      }
+      pendingEntries = parsed;
       showPreview(parsed);
-      status.innerHTML=`<div class="msg ok">파일 읽기 완료 — ${parsed.length}건 인식됨. 아래에서 확인 후 추가하세요.</div>`;
+      status.innerHTML = `<div class="msg ok">${parsed.length}건 인식됨 — 아래에서 확인 후 적용하세요.</div>`;
     } catch(err) {
-      status.innerHTML=`<div class="msg err">파일 읽기 오류: ${err.message}</div>`;
+      status.innerHTML = `<div class="msg err">파일 읽기 오류: ${err.message}</div>`;
       console.error(err);
     }
   };
@@ -564,264 +539,231 @@ function processFile(file) {
 }
 
 function showPreview(entries) {
-  const pc=document.getElementById('preview-card');
-  pc.style.display='block';
-  document.getElementById('preview-count').textContent=`${entries.length}건`;
-  const tbody=document.getElementById('preview-tbody');
-  tbody.innerHTML=entries.slice(0,200).map(e=>{
-    const dl=e.dateFrom===e.dateTo?fmtD(e.dateFrom):`${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
-    const bizD=getBizDays(e.dateFrom,e.dateTo).length;
-    const cls=isPast(e.dateFrom)?'var(--danger-text)':'var(--warn-text)';
-    const lbl=isPast(e.dateFrom)?'완료':'예정';
-    return `<tr><td>${dl}(${bizD}일)</td><td style="font-weight:500">${e.name}</td><td style="color:var(--text2)">${e.rank}</td><td style="color:var(--info-text)">${e.project}</td><td style="text-align:right;font-weight:500">${e.hours}h</td><td style="color:${cls};font-size:11px">${lbl}</td></tr>`;
-  }).join('')+(entries.length>200?`<tr><td colspan="6" style="text-align:center;color:var(--text3);font-size:11px">... 외 ${entries.length-200}건</td></tr>`:'');
-  pc.scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('preview-card').style.display = 'block';
+  document.getElementById('preview-count').textContent = `${entries.length}건`;
+  const tbody = document.getElementById('preview-tbody');
+  tbody.innerHTML = entries.slice(0, 300).map(e => {
+    const dl = e.dateFrom === e.dateTo ? fmtD(e.dateFrom) : `${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
+    const biz = getBizDays(e.dateFrom, e.dateTo).length;
+    const past = isPast(e.dateFrom);
+    // 날짜 범위가 걸쳐있으면 정확한 분류는 적용 후에 계산
+    const lbl = past ? '완료' : '예정';
+    const lc = past ? 'var(--danger-text)' : 'var(--warn-text)';
+    return `<tr><td>${dl}</td><td style="color:var(--text2)">${biz}일</td><td style="font-weight:500">${e.name}</td><td style="color:var(--text2)">${e.rank}</td><td style="color:var(--info-text)">${e.project}</td><td style="text-align:right;font-weight:500">${e.hours}h</td><td style="color:${lc};font-size:11px">${lbl}</td></tr>`;
+  }).join('') + (entries.length > 300 ? `<tr><td colspan="7" style="text-align:center;color:var(--text3);font-size:11px">... 외 ${entries.length-300}건</td></tr>` : '');
+  document.getElementById('preview-card').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function confirmImport() {
-  const dedup=document.getElementById('dedup-check').checked;
-  let added=0, skipped=0;
-  for(const e of pendingEntries) {
-    if(dedup) {
-      const dup=state.entries.find(x=>x.name===e.name&&x.dateFrom===e.dateFrom&&x.dateTo===e.dateTo&&x.project===e.project);
-      if(dup){ skipped++; continue; }
+function applyParsed() {
+  currentEntries = pendingEntries;
+  pendingEntries = [];
+  // 새 프로젝트 자동 등록 (예산 없이)
+  for (const e of currentEntries) {
+    if (!state.projects.find(p => p.name === e.project)) {
+      state.projects.push({ id: uid(), name: e.project, budget: null });
     }
-    if(!state.projects.find(p=>p.name===e.project)) state.projects.push({id:uid(),name:e.project,budget:null});
-    const {_src,...entry}=e;
-    state.entries.push(entry);
-    added++;
   }
-  saveState(); refresh();
-  document.getElementById('import-msg').textContent=`${added}건 추가됨${skipped?` (중복 ${skipped}건 건너뜀)`:''}`; 
-  document.getElementById('import-msg').className='msg ok';
-  document.getElementById('preview-card').style.display='none';
-  pendingEntries=[];
+  saveState();
+  document.getElementById('preview-card').style.display = 'none';
+  document.getElementById('upload-status').innerHTML = '';
+  document.getElementById('apply-msg').textContent = '';
+  refresh();
+  switchTab('summary');
 }
 
-function cancelPreview() { document.getElementById('preview-card').style.display='none'; pendingEntries=[]; }
-
-// ── 수동 입력 ──
-function updateHint() {
-  const from=document.getElementById('m-date-from').value;
-  const to=document.getElementById('m-date-to').value||from;
-  const bizEl=document.getElementById('m-biz-days');
-  const hint=document.getElementById('alloc-hint');
-  if(!from){ bizEl.textContent=''; hint.textContent='날짜와 프로젝트를 입력하면 배분 결과가 표시됩니다'; return; }
-  const days=getBizDays(from,to), totalH=days.length*8;
-  bizEl.textContent=`영업일 ${days.length}일 = ${totalH}h`;
-  const rows=[...document.querySelectorAll('#proj-inputs .proj-input-row')];
-  const projs=rows.map(r=>({name:r.querySelector('.pname').value.trim()||'(미입력)',manualH:parseFloat(r.querySelector('.phours').value)}));
-  const fixedSum=projs.reduce((s,p)=>s+(isNaN(p.manualH)?0:p.manualH),0);
-  const autoCount=projs.filter(p=>isNaN(p.manualH)).length;
-  const autoH=autoCount>0?(totalH-fixedSum)/autoCount:0;
-  hint.textContent=`배분 결과: ${projs.map(p=>`${p.name} ${r1(isNaN(p.manualH)?autoH:p.manualH)}h`).join(' / ')} (합계 ${totalH}h)`;
-}
-
-function addProjRow() {
-  const wrap=document.getElementById('proj-inputs');
-  const div=document.createElement('div'); div.className='proj-input-row';
-  div.innerHTML=`<input type="text" placeholder="프로젝트명" class="pname" list="proj-datalist"><input type="number" placeholder="시간 (빈칸=균등)" min="0.5" step="0.5" class="phours"><button class="proj-rm-btn" onclick="removeProjRow(this)">−</button>`;
-  div.querySelector('.pname').addEventListener('input',updateHint);
-  div.querySelector('.phours').addEventListener('input',updateHint);
-  wrap.appendChild(div); updateHint();
-}
-function removeProjRow(btn) {
-  if(document.querySelectorAll('#proj-inputs .proj-input-row').length<=1) return;
-  btn.closest('.proj-input-row').remove(); updateHint();
-}
-function addManual() {
-  const name=document.getElementById('m-name').value.trim();
-  const rank=document.getElementById('m-rank').value.trim();
-  const from=document.getElementById('m-date-from').value;
-  const to=document.getElementById('m-date-to').value||from;
-  if(!name||!from){ showMsg('manual-msg','이름과 날짜를 입력해주세요',true); return; }
-  const days=getBizDays(from,to);
-  if(!days.length){ showMsg('manual-msg','해당 범위에 영업일이 없습니다',true); return; }
-  const totalH=days.length*8;
-  const rows=[...document.querySelectorAll('#proj-inputs .proj-input-row')];
-  const projs=rows.map(r=>({name:r.querySelector('.pname').value.trim(),manualH:parseFloat(r.querySelector('.phours').value)})).filter(p=>p.name);
-  if(!projs.length){ showMsg('manual-msg','프로젝트명을 입력해주세요',true); return; }
-  const fixedSum=projs.reduce((s,p)=>s+(isNaN(p.manualH)?0:p.manualH),0);
-  const autoCount=projs.filter(p=>isNaN(p.manualH)).length;
-  const autoH=autoCount>0?(totalH-fixedSum)/autoCount:0;
-  for(const p of projs) {
-    const h=isNaN(p.manualH)?autoH:p.manualH;
-    if(!state.projects.find(x=>x.name===p.name)) state.projects.push({id:uid(),name:p.name,budget:null});
-    state.entries.push({name,rank,dateFrom:from,dateTo:to,project:p.name,hours:Math.round(h*100)/100});
-  }
-  saveState(); refresh(); showMsg('manual-msg',`${projs.length}개 추가됨`,false);
+function cancelPreview() {
+  document.getElementById('preview-card').style.display = 'none';
+  pendingEntries = [];
 }
 
 // ── 예산 ──
 function addProject() {
-  const nm=document.getElementById('new-proj-name').value.trim();
-  const b=document.getElementById('new-proj-budget').value;
-  if(!nm){ showMsg('proj-msg','프로젝트명을 입력해주세요',true); return; }
-  if(state.projects.find(p=>p.name===nm)){ showMsg('proj-msg','이미 등록됨',true); return; }
-  state.projects.push({id:uid(),name:nm,budget:b?parseFloat(b):null});
-  document.getElementById('new-proj-name').value=''; document.getElementById('new-proj-budget').value='';
+  const nm = document.getElementById('new-proj-name').value.trim();
+  const b = document.getElementById('new-proj-budget').value;
+  if (!nm) { showMsg('proj-msg','프로젝트명을 입력해주세요',true); return; }
+  if (state.projects.find(p => p.name === nm)) { showMsg('proj-msg','이미 등록됨',true); return; }
+  state.projects.push({ id: uid(), name: nm, budget: b ? parseFloat(b) : null });
+  document.getElementById('new-proj-name').value = '';
+  document.getElementById('new-proj-budget').value = '';
   saveState(); refresh(); showMsg('proj-msg','등록됨',false);
 }
-function updateProjBudget(id,val) {
-  const p=state.projects.find(x=>x.id===id);
-  if(p){ p.budget=val?parseFloat(val):null; saveState(); refresh(); }
+function updateProjBudget(id, val) {
+  const p = state.projects.find(x => x.id === id);
+  if (p) { p.budget = val ? parseFloat(val) : null; saveState(); refresh(); }
 }
 function removeProject(id) {
-  if(!confirm('프로젝트를 삭제하시겠습니까?')) return;
-  state.projects=state.projects.filter(p=>p.id!==id);
+  if (!confirm('프로젝트를 삭제하시겠습니까?')) return;
+  state.projects = state.projects.filter(p => p.id !== id);
   saveState(); refresh();
 }
 
-// ── 기타 ──
-function removeEntry(i) { state.entries.splice(i,1); saveState(); refresh(); }
-function clearEntries() { if(!confirm('시간 입력 내역을 모두 삭제하시겠습니까?')) return; state.entries=[]; saveState(); refresh(); }
-function clearAll() { if(!confirm('모든 데이터를 초기화하시겠습니까?')) return; state={...state,projects:[],entries:[]}; saveState(); refresh(); }
+// ── 설정 ──
 function saveSettings() {
-  const d=document.getElementById('cfg-date').value;
-  if(!d){ showMsg('cfg-msg','날짜를 선택해주세요',true); return; }
-  state.refDate=d; saveState(); refresh(); showMsg('cfg-msg','저장되었습니다',false);
+  const d = document.getElementById('cfg-date').value;
+  if (!d) { showMsg('cfg-msg','날짜를 선택해주세요',true); return; }
+  state.refDate = d; saveState(); refresh(); showMsg('cfg-msg','저장되었습니다',false);
 }
-function showMsg(id,text,err) {
-  const el=document.getElementById(id);
-  el.textContent=text; el.className=err?'msg err':'msg ok';
-  setTimeout(()=>el.textContent='',3500);
+function showMsg(id, text, err) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.className = err ? 'msg err' : 'msg ok';
+  setTimeout(() => el.textContent = '', 3000);
 }
-function exportData() {
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
-  a.download=`audit_${new Date().toISOString().slice(0,10)}.json`; a.click();
+
+function exportBudget() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({refDate:state.refDate,projects:state.projects},null,2)],{type:'application/json'}));
+  a.download = `audit_budget_${new Date().toISOString().slice(0,10)}.json`; a.click();
   showMsg('io-msg','내보내기 완료',false);
 }
-function importJSON(e) {
-  const file=e.target.files[0]; if(!file) return;
-  const fr=new FileReader();
-  fr.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.entries) throw 0; state=d; saveState(); refresh(); document.getElementById('cfg-date').value=state.refDate||''; showMsg('io-msg',`불러오기 완료 (${state.entries.length}건)`,false); }catch{ showMsg('io-msg','파일 형식 오류',true); } };
-  fr.readAsText(file); e.target.value='';
+function importBudget(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const fr = new FileReader();
+  fr.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d.projects) throw 0;
+      state.refDate = d.refDate || state.refDate;
+      state.projects = d.projects;
+      saveState(); refresh();
+      document.getElementById('cfg-date').value = state.refDate || '';
+      showMsg('io-msg',`불러오기 완료 (${state.projects.length}개 프로젝트)`,false);
+    } catch { showMsg('io-msg','파일 형식 오류',true); }
+  };
+  fr.readAsText(file); e.target.value = '';
 }
 
 // ── 집계 ──
 function calcStats() {
-  const pm={}, sm={};
-  let tU=0, tP=0;
-  for(const e of state.entries) {
-    const {used,planned}=classifyEntry(e);
-    tU+=used; tP+=planned;
-    if(!pm[e.project]) pm[e.project]={used:0,planned:0};
-    pm[e.project].used+=used; pm[e.project].planned+=planned;
-    const k=`${e.name}||${e.rank}`;
-    if(!sm[k]) sm[k]={name:e.name,rank:e.rank,used:0,planned:0};
-    sm[k].used+=used; sm[k].planned+=planned;
+  const pm = {}, sm = {};
+  let tU = 0, tP = 0;
+  for (const e of currentEntries) {
+    const { used, planned } = classifyEntry(e);
+    tU += used; tP += planned;
+    if (!pm[e.project]) pm[e.project] = { used:0, planned:0 };
+    pm[e.project].used += used; pm[e.project].planned += planned;
+    const k = `${e.name}||${e.rank}`;
+    if (!sm[k]) sm[k] = { name:e.name, rank:e.rank, used:0, planned:0 };
+    sm[k].used += used; sm[k].planned += planned;
   }
-  return {tU,tP,pm,sm};
+  return { tU, tP, pm, sm };
 }
 
 // ── refresh ──
 function refresh() {
-  const {tU,tP,pm,sm}=calcStats();
-  const totalBudget=state.projects.reduce((s,p)=>s+(p.budget||0),0);
-  const hasBudget=state.projects.some(p=>p.budget>0);
+  const { tU, tP, pm, sm } = calcStats();
+  const totalBudget = state.projects.reduce((s,p) => s+(p.budget||0), 0);
+  const hasBudget = state.projects.some(p => p.budget > 0);
+  const hasData = currentEntries.length > 0;
 
-  document.getElementById('hdr-week').textContent=state.refDate?fmtD(getWeekMon(state.refDate))+' 주 기준':'기준 주차 미설정';
-  document.getElementById('hdr-entries').textContent=`입력 ${state.entries.length}건`;
+  document.getElementById('hdr-week').textContent = state.refDate ? fmtD(getWeekMon(state.refDate))+' 주 기준' : '기준 주차 미설정';
+  document.getElementById('hdr-file').textContent = currentFileName ? `📄 ${currentFileName}` : '파일 미업로드';
 
   // 요약
-  document.getElementById('s-total').textContent=hasBudget?totalBudget:'-';
-  document.getElementById('s-used').textContent=r1(tU);
-  document.getElementById('s-planned').textContent=r1(tP);
-  document.getElementById('s-remain-now').textContent=hasBudget?r1(totalBudget-tU):'-';
-  document.getElementById('s-remain-all').textContent=hasBudget?r1(totalBudget-tU-tP):'-';
-  document.getElementById('s-pct').textContent=hasBudget&&totalBudget>0?Math.round((tU+tP)/totalBudget*100)+'%':'-';
-  document.getElementById('s-refdate').textContent=state.refDate||'미설정';
-  document.getElementById('s-refweek').textContent=state.refDate?fmtD(getWeekMon(state.refDate))+' 주':'-';
-  if(hasBudget&&totalBudget>0){
-    const up=Math.min(100,tU/totalBudget*100),pp=Math.min(100-up,tP/totalBudget*100);
-    document.getElementById('b-used').style.width=up.toFixed(1)+'%';
-    document.getElementById('b-planned').style.width=pp.toFixed(1)+'%';
-  } else { document.getElementById('b-used').style.width='0%'; document.getElementById('b-planned').style.width='0%'; }
+  document.getElementById('s-total').textContent = hasBudget ? totalBudget : '-';
+  document.getElementById('s-used').textContent = hasData ? r1(tU) : '-';
+  document.getElementById('s-planned').textContent = hasData ? r1(tP) : '-';
+  document.getElementById('s-remain-now').textContent = hasBudget && hasData ? r1(totalBudget-tU) : '-';
+  document.getElementById('s-remain-all').textContent = hasBudget && hasData ? r1(totalBudget-tU-tP) : '-';
+  document.getElementById('s-pct').textContent = hasBudget && totalBudget > 0 && hasData ? Math.round((tU+tP)/totalBudget*100)+'%' : '-';
+  document.getElementById('s-refdate').textContent = state.refDate || '미설정';
+  document.getElementById('s-refweek').textContent = state.refDate ? fmtD(getWeekMon(state.refDate))+' 주' : '-';
+
+  if (hasBudget && totalBudget > 0 && hasData) {
+    const up = Math.min(100, tU/totalBudget*100), pp = Math.min(100-up, tP/totalBudget*100);
+    document.getElementById('b-used').style.width = up.toFixed(1)+'%';
+    document.getElementById('b-planned').style.width = pp.toFixed(1)+'%';
+  } else {
+    document.getElementById('b-used').style.width = '0%';
+    document.getElementById('b-planned').style.width = '0%';
+  }
 
   // 프로젝트 카드
-  const wrap=document.getElementById('proj-cards-wrap');
-  const allNames=new Set([...state.projects.map(p=>p.name),...Object.keys(pm)]);
-  if(!allNames.size){ wrap.innerHTML='<div class="empty" style="background:var(--bg);border-radius:var(--radius-lg);padding:32px">데이터를 먼저 입력해주세요</div>'; }
-  else {
-    const cards=[...allNames].map(nm=>{
-      const proj=state.projects.find(p=>p.name===nm);
-      const v=pm[nm]||{used:0,planned:0};
-      const budget=proj?.budget||null;
-      const tot=v.used+v.planned;
-      const remain=budget!==null?r1(budget-tot):null;
-      const remainNow=budget!==null?r1(budget-v.used):null;
-      let badgeHtml='<span class="badge badge-nobudget">예산 미설정</span>';
-      if(budget!==null){ const ratio=budget>0?tot/budget:0; badgeHtml=ratio>1?'<span class="badge badge-over">예산 초과</span>':ratio>0.85?'<span class="badge badge-warn">주의</span>':'<span class="badge badge-ok">정상</span>'; }
-      const usedPct=budget>0?Math.min(100,v.used/budget*100).toFixed(1):0;
-      const planPct=budget>0?Math.min(100-usedPct,v.planned/budget*100).toFixed(1):0;
+  const wrap = document.getElementById('proj-cards-wrap');
+  const allNames = new Set([...state.projects.map(p=>p.name), ...Object.keys(pm)]);
+  if (!allNames.size) {
+    wrap.innerHTML = '<div class="empty" style="background:var(--bg);border-radius:var(--rl);padding:32px">엑셀 파일을 업로드해주세요</div>';
+  } else {
+    const cards = [...allNames].map(nm => {
+      const proj = state.projects.find(p => p.name === nm);
+      const v = pm[nm] || { used:0, planned:0 };
+      const budget = proj?.budget || null;
+      const tot = v.used + v.planned;
+      const remain = budget !== null ? r1(budget-tot) : null;
+      const remainNow = budget !== null ? r1(budget-v.used) : null;
+      let badgeHtml = '<span class="badge badge-nb">예산 미설정</span>';
+      if (budget !== null) {
+        const ratio = budget > 0 ? tot/budget : 0;
+        badgeHtml = ratio > 1 ? '<span class="badge badge-over">예산 초과</span>' : ratio > 0.85 ? '<span class="badge badge-warn">주의</span>' : '<span class="badge badge-ok">정상</span>';
+      }
+      const usedPct = budget > 0 ? Math.min(100, v.used/budget*100).toFixed(1) : 0;
+      const planPct = budget > 0 ? Math.min(100-usedPct, v.planned/budget*100).toFixed(1) : 0;
       return `<div class="proj-card">
-        <div class="proj-card-name">${nm} ${badgeHtml}</div>
-        <div class="proj-card-budget">${budget!==null?`예산 ${budget}h`:'예산 미설정'}</div>
-        <div class="proj-nums-row">
+        <div class="pcn">${nm} ${badgeHtml}</div>
+        <div class="pcb">${budget !== null ? `예산 ${budget}h` : '예산 미설정'}</div>
+        <div class="pnr">
           <div class="pnum"><div class="pnum-label">완료</div><div class="pnum-val used">${r1(v.used)}h</div></div>
           <div class="pnum"><div class="pnum-label">예정</div><div class="pnum-val planned">${r1(v.planned)}h</div></div>
           <div class="pnum"><div class="pnum-label">잔여(현재)</div><div class="pnum-val remain">${remainNow!==null?remainNow+'h':'-'}</div></div>
           <div class="pnum"><div class="pnum-label">잔여(예정포함)</div><div class="pnum-val remain">${remain!==null?remain+'h':'-'}</div></div>
         </div>
-        <div class="progress-wrap" style="margin:6px 0 2px">
-          <div class="bar-used" style="width:${usedPct}%"></div>
-          <div class="bar-planned" style="width:${planPct}%"></div>
-          <div class="bar-remain"></div>
+        <div class="pw" style="margin:6px 0 2px">
+          <div class="bu" style="width:${usedPct}%"></div>
+          <div class="bp" style="width:${planPct}%"></div>
+          <div class="br"></div>
         </div>
       </div>`;
     });
-    wrap.innerHTML=`<div class="proj-cards">${cards.join('')}</div>`;
+    wrap.innerHTML = `<div class="proj-cards">${cards.join('')}</div>`;
   }
 
   // 직원별
-  const tb=document.getElementById('staff-tbody');
-  const sarr=Object.values(sm).sort((a,b)=>(b.used+b.planned)-(a.used+a.planned));
-  tb.innerHTML=sarr.length?sarr.map(s=>`<tr><td style="font-weight:500">${s.name}</td><td style="color:var(--text2)">${s.rank}</td><td style="text-align:right;color:var(--danger-text)">${r1(s.used)}</td><td style="text-align:right;color:var(--warn-text)">${r1(s.planned)}</td><td style="text-align:right;font-weight:500">${r1(s.used+s.planned)}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">데이터를 먼저 입력해주세요</td></tr>';
+  const tb = document.getElementById('staff-tbody');
+  const sarr = Object.values(sm).sort((a,b) => (b.used+b.planned)-(a.used+a.planned));
+  tb.innerHTML = sarr.length ? sarr.map(s => `<tr>
+    <td style="font-weight:500">${s.name}</td>
+    <td style="color:var(--text2)">${s.rank}</td>
+    <td style="text-align:right;color:var(--danger-text)">${r1(s.used)}</td>
+    <td style="text-align:right;color:var(--warn-text)">${r1(s.planned)}</td>
+    <td style="text-align:right;font-weight:500">${r1(s.used+s.planned)}</td>
+  </tr>`).join('') : '<tr><td colspan="5" class="empty">엑셀 파일을 업로드해주세요</td></tr>';
 
-  // 입력 내역
-  document.getElementById('entry-count').textContent=state.entries.length;
-  const el=document.getElementById('entry-list');
-  const recent=[...state.entries].reverse().slice(0,80);
-  el.innerHTML=recent.length?recent.map((e,ri)=>{
-    const i=state.entries.length-1-ri;
-    const {used,planned}=classifyEntry(e);
-    const lbl=used>0&&planned>0?`완료 ${r1(used)}h+예정 ${r1(planned)}h`:used>0?'완료':'예정';
-    const lc=used>0&&planned===0?'var(--danger-text)':used===0?'var(--warn-text)':'var(--text2)';
-    const dl=e.dateFrom===e.dateTo?fmtD(e.dateFrom):`${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
-    return `<div class="entry-item"><span><span style="color:var(--text2)">${dl}</span> <span style="font-weight:500;margin:0 3px">${e.name}</span><span style="color:var(--info-text)">${e.project}</span> <span style="font-weight:500;margin-left:3px">${e.hours}h</span> <span style="font-size:10px;margin-left:3px;color:${lc}">${lbl}</span></span><button class="btn sm danger" onclick="removeEntry(${i})">×</button></div>`;
-  }).join(''):'<div class="empty">없음</div>';
+  // 업로드 탭 내역
+  document.getElementById('entry-count').textContent = currentEntries.length;
+  document.getElementById('applied-file').textContent = currentFileName ? `📄 ${currentFileName}` : '';
+  const ec = document.getElementById('entries-card');
+  ec.style.display = currentEntries.length ? 'block' : 'none';
+  const el = document.getElementById('entry-list');
+  el.innerHTML = currentEntries.slice(0, 100).map((e,i) => {
+    const { used, planned } = classifyEntry(e);
+    const lbl = used > 0 && planned > 0 ? `완료 ${r1(used)}h+예정 ${r1(planned)}h` : used > 0 ? '완료' : '예정';
+    const lc = used > 0 && planned === 0 ? 'var(--danger-text)' : used === 0 ? 'var(--warn-text)' : 'var(--text2)';
+    const dl = e.dateFrom === e.dateTo ? fmtD(e.dateFrom) : `${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:.5px solid var(--border)">
+      <span><span style="color:var(--text2)">${dl}</span> <span style="font-weight:500;margin:0 3px">${e.name}</span><span style="color:var(--info-text)">${e.project}</span> <span style="font-weight:500;margin-left:3px">${e.hours}h</span> <span style="font-size:10px;margin-left:3px;color:${lc}">${lbl}</span></span>
+    </div>`;
+  }).join('') + (currentEntries.length > 100 ? `<div style="text-align:center;color:var(--text3);font-size:11px;padding:8px">... 외 ${currentEntries.length-100}건</div>` : '');
 
   // 예산 목록
-  const bl=document.getElementById('budget-list');
-  bl.innerHTML=state.projects.length?state.projects.map(p=>`<div class="budget-row">
-    <div class="budget-name">${p.name}</div>
-    <input class="budget-input" type="number" placeholder="미설정" min="0" value="${p.budget!==null?p.budget:''}" onchange="updateProjBudget('${p.id}',this.value)" title="예산(시간)">
-    <span style="font-size:12px;color:var(--text2)">h</span>
-    <button class="btn sm danger" onclick="removeProject('${p.id}')">삭제</button>
-  </div>`).join(''):'<div class="empty">등록된 프로젝트가 없습니다</div>';
+  const bl = document.getElementById('budget-list');
+  bl.innerHTML = state.projects.length ? state.projects.map(p => `
+    <div class="budget-row">
+      <div class="budget-name">${p.name}</div>
+      <input class="budget-input" type="number" placeholder="미설정" min="0" value="${p.budget!==null?p.budget:''}" onchange="updateProjBudget('${p.id}',this.value)">
+      <span style="font-size:12px;color:var(--text2)">h</span>
+      <button class="btn sm danger" onclick="removeProject('${p.id}')">삭제</button>
+    </div>`).join('') : '<div class="empty">등록된 프로젝트가 없습니다</div>';
 
-  // datalist
-  document.getElementById('proj-datalist').innerHTML=state.projects.map(p=>`<option value="${p.name}">`).join('');
-  document.getElementById('cfg-date').value=state.refDate||'';
+  document.getElementById('cfg-date').value = state.refDate || '';
 }
 
 function switchTab(tab) {
-  ['summary','projects','staff','upload','manual','budget','settings'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===tab?'block':'none';});
-  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',['summary','projects','staff','upload','manual','budget','settings'][i]===tab);});
+  const tabs = ['summary','projects','staff','upload','budget','settings'];
+  tabs.forEach(t => { document.getElementById('tab-'+t).style.display = t===tab?'block':'none'; });
+  document.querySelectorAll('.tab').forEach((el,i) => { el.classList.toggle('active', tabs[i]===tab); });
 }
 
-document.getElementById('m-date-from').addEventListener('change',function(){
-  const to=document.getElementById('m-date-to');
-  if(!to.value||to.value<this.value) to.value=this.value;
-  updateHint();
-});
-document.getElementById('m-date-to').addEventListener('change',updateHint);
-document.querySelector('.pname').addEventListener('input',updateHint);
-document.querySelector('.phours').addEventListener('input',updateHint);
-document.getElementById('new-proj-name').addEventListener('keydown',e=>{if(e.key==='Enter') addProject();});
-
-loadState(); refresh();
+loadState();
+refresh();
 </script>
 </body>
 </html>
