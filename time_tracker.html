@@ -305,11 +305,19 @@ const SKIP_KW = ['휴가','교육','블락','block','Block','지방선거','오�
 
 function normalizeProj(raw) {
   let s = raw.trim();
-  // (ITAC), (AC), (영문) 같은 업무코드 제거
-  s = s.replace(/\([A-Za-z]+\)/g, '');
-  // 숫자H 패턴 제거 (2H, 24H, 2h 등) — 이미 시간으로 추출됨
-  s = s.replace(/\d+\s*[Hh]\b/g, '');
-  // 남은 괄호, 숫자 suffix 제거
+  // 숫자H 패턴 제거 (24H, 2H 등) — 이미 시간으로 추출됨
+  s = s.replace(/\d+\s*[Hh]\b/gi, '');
+  // E-숫자 코드 제거: E-691234, E-69?????? 형태 (붙거나 띄어쓰기)
+  s = s.replace(/\s*E-\d+/gi, '');
+  // 괄호 안 영문 코드 제거: (ITAC), (AC), (FU) 등
+  s = s.replace(/\s*\([A-Za-z][A-Za-z0-9\-]*\)/g, '');
+  // 공백 없이 붙은 영문 대문자 suffix 제거: BB생명FU, BB생명ITAC 등
+  // 한글 뒤에 바로 붙은 영문 대문자(2~6자)
+  s = s.replace(/([가-힣])([A-Z]{2,6})$/g, '$1');
+  // 공백 후 영문 대문자 코드 suffix: "BB은행 ITAC", "BB생명 FU"
+  // 단, 숫자 없이 영문만인 경우만 (숫자 포함이면 시간일 수 있으므로 별도 처리)
+  s = s.replace(/\s+[A-Z]{2,6}$/g, '');
+  // 남은 괄호 제거
   s = s.replace(/[()]/g, '');
   return s.trim();
 }
@@ -336,22 +344,27 @@ function parseCell(cellVal) {
 
     let hours = null, rawName = part;
 
+    // E-숫자 코드 패턴 먼저 제거하여 plainM이 숫자를 시간으로 오인식하는 것 방지
+    const partClean = part.replace(/\s*E-\d+/gi, '').trim();
+
     // 숫자H 패턴 (24H, 2H, 2h)
-    const hrM = part.match(/(\d+)\s*[Hh]\b/);
+    const hrM = partClean.match(/(\d+)\s*[Hh]\b/);
     // (숫자) 패턴
-    const parenM = !hrM ? part.match(/\((\d+)\)/) : null;
-    // 끝에 숫자만 (AA은행 4)
-    const plainM = (!hrM && !parenM) ? part.match(/^(.+?)\s+(\d+)\s*$/) : null;
+    const parenM = !hrM ? partClean.match(/\((\d+)\)/) : null;
+    // 끝에 숫자만: 공백 있음 "AA은행 4" 또는 공백 없음 "BB증권7"
+    const plainM = (!hrM && !parenM) ? partClean.match(/^(.+?)\s*(\d+)\s*$/) : null;
 
     if (hrM) {
       hours = parseInt(hrM[1]);
-      rawName = part.slice(0, hrM.index);
+      rawName = partClean.slice(0, hrM.index);
     } else if (parenM) {
       hours = parseInt(parenM[1]);
-      rawName = part.slice(0, parenM.index);
+      rawName = partClean.slice(0, parenM.index);
     } else if (plainM) {
       hours = parseInt(plainM[2]);
       rawName = plainM[1];
+    } else {
+      rawName = partClean;
     }
 
     const name = normalizeProj(rawName);
@@ -679,11 +692,12 @@ function refresh() {
 
   // 프로젝트 카드
   const wrap = document.getElementById('proj-cards-wrap');
-  const allNames = new Set([...state.projects.map(p=>p.name), ...Object.keys(pm)]);
-  if (!allNames.size) {
+  const allNamesRaw = new Set([...state.projects.map(p=>p.name), ...Object.keys(pm)]);
+  const allNames = [...allNamesRaw].sort((a,b) => a.localeCompare(b, ['en','ko']));
+  if (!allNames.length) {
     wrap.innerHTML = '<div class="empty" style="background:var(--bg);border-radius:var(--rl);padding:32px">엑셀 파일을 업로드해주세요</div>';
   } else {
-    const cards = [...allNames].map(nm => {
+    const cards = allNames.map(nm => {
       const proj = state.projects.find(p => p.name === nm);
       const v = pm[nm] || { used:0, planned:0 };
       const budget = proj?.budget || null;
@@ -718,7 +732,13 @@ function refresh() {
 
   // 직원별
   const tb = document.getElementById('staff-tbody');
-  const sarr = Object.values(sm).sort((a,b) => (b.used+b.planned)-(a.used+a.planned));
+  const RANK_ORDER = {'Director':0,'S.Manager':1,'Manager':2,'Senior':3,'Staff':4};
+  const sarr = Object.values(sm).sort((a,b) => {
+    const ra = RANK_ORDER[a.rank] ?? 99;
+    const rb = RANK_ORDER[b.rank] ?? 99;
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name, ['en','ko']);
+  });
   tb.innerHTML = sarr.length ? sarr.map(s => `<tr>
     <td style="font-weight:500">${s.name}</td>
     <td style="color:var(--text2)">${s.rank}</td>
@@ -745,7 +765,7 @@ function refresh() {
 
   // 예산 목록
   const bl = document.getElementById('budget-list');
-  bl.innerHTML = state.projects.length ? state.projects.map(p => `
+  bl.innerHTML = state.projects.length ? [...state.projects].sort((a,b)=>a.name.localeCompare(b.name,['en','ko'])).map(p => `
     <div class="budget-row">
       <div class="budget-name">${p.name}</div>
       <input class="budget-input" type="number" placeholder="미설정" min="0" value="${p.budget!==null?p.budget:''}" onchange="updateProjBudget('${p.id}',this.value)">
