@@ -319,18 +319,19 @@ function getBizDays(from, to) {
   return days;
 }
 function classifyEntry(e) {
-  const days=getBizDays(e.dateFrom,e.dateTo);
-  // 영업일이 0인 경우(공휴일만 있는 날 등)에도 입력 시간은 유효
-  // dateFrom 기준으로 완료/예정 분류
-  if(!days.length){
-    return isPast(e.dateFrom)
-      ? {used:e.hours, planned:0}
-      : {used:0, planned:e.hours};
+  const hpc = e.hours / (e.colCount || 1); // 컬럼당 시간
+  // dates 배열이 있으면 각 날짜별로 완료/예정 분류 (가장 정확)
+  if (e.dates && e.dates.length) {
+    let used = 0, planned = 0;
+    for (const d of e.dates) {
+      if (isPast(d)) used += hpc; else planned += hpc;
+    }
+    return {used: Math.round(used*100)/100, planned: Math.round(planned*100)/100};
   }
-  const hpd=e.hours/days.length;
-  let used=0,planned=0;
-  for(const d of days){if(isPast(d))used+=hpd;else planned+=hpd;}
-  return {used:Math.round(used*100)/100,planned:Math.round(planned*100)/100};
+  // dates 없는 경우 (구버전 호환) dateFrom 기준으로 단순 분류
+  return isPast(e.dateFrom)
+    ? {used: e.hours, planned: 0}
+    : {used: 0, planned: e.hours};
 }
 
 // ── 파싱 ──
@@ -522,10 +523,14 @@ function parseXLSX(buffer) {
           const projs = parseCell(rawVal);
           if (!projs.length) continue;
 
-          // 날짜 역전 방지 (셀에 연도 오입력 등으로 dateTo < dateFrom인 경우)
+          // 날짜 역전 방지
           if (dateTo < dateFrom) dateTo = dateFrom;
-          const bizDays = getBizDays(dateFrom, dateTo);
-          const totalH = bizDays.length * 8;
+          // 총 시간 = 병합된 날짜 컬럼 수 × 8h
+          const colDates = merge
+            ? hdr.dateCols.filter(d => d.col >= merge.s.c && d.col <= merge.e.c).map(d => d.dateStr)
+            : [dateStr];
+          const colCount = colDates.length;
+          const totalH = colCount * 8;
 
           // 시간 배분
           const fixedSum = projs.reduce((s,p) => s + (p.hours !== null ? p.hours : 0), 0);
@@ -539,6 +544,8 @@ function parseXLSX(buffer) {
               name: name.trim(),
               rank: rank.trim(),
               dateFrom, dateTo,
+              colCount,
+              dates: colDates, // 실제 날짜 컬럼 목록 (완료/예정 분류용)
               project: p.name,
               hours: Math.round(h * 100) / 100
             });
@@ -590,7 +597,7 @@ function showPreview(entries) {
   const tbody = document.getElementById('preview-tbody');
   tbody.innerHTML = entries.slice(0, 300).map(e => {
     const dl = e.dateFrom === e.dateTo ? fmtD(e.dateFrom) : `${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
-    const biz = getBizDays(e.dateFrom, e.dateTo).length;
+    const biz = e.dates ? e.dates.length : getBizDays(e.dateFrom, e.dateTo).length;
     const past = isPast(e.dateFrom);
     // 날짜 범위가 걸쳐있으면 정확한 분류는 적용 후에 계산
     const lbl = past ? '완료' : '예정';
@@ -695,7 +702,7 @@ function renderProjModal(projName, expandedKey) {
       .sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom))
       .map(e => {
         const dl = e.dateFrom===e.dateTo ? fmtD(e.dateFrom) : `${fmtD(e.dateFrom)}~${fmtD(e.dateTo)}`;
-        const biz = getBizDays(e.dateFrom, e.dateTo).length;
+        const biz = e.dates ? e.dates.length : getBizDays(e.dateFrom, e.dateTo).length;
         const usedC = e._used>0&&e._planned===0?'var(--danger-text)':e._used>0?'var(--text2)':'var(--text3)';
         const planC = e._planned>0?'var(--warn-text)':'var(--text3)';
         const lbl = e._used>0&&e._planned>0
