@@ -255,15 +255,7 @@ btn,.btn{padding:7px 16px;border-radius:var(--r);border:.5px solid var(--border2
       <button class="btn primary" onclick="saveSettings()">저장</button>
       <span class="msg" id="cfg-msg" style="margin-left:8px"></span>
     </div>
-    <div class="card">
-      <div class="card-title">창립기념일 설정</div>
-      <div class="tip">창립기념일은 영업일 계산에서 제외됩니다. 매년 반복되므로 해당 연도 날짜를 직접 추가해주세요.</div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-        <input type="date" id="founding-date" style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;outline:none">
-        <button class="btn primary" onclick="addFoundingDay()">추가</button>
-      </div>
-      <div id="founding-list" style="display:flex;flex-wrap:wrap;gap:4px"></div>
-    </div>
+
     <div class="card">
       <div class="card-title">예산 데이터 내보내기 / 불러오기</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">시간 데이터는 파일 업로드로 항상 새로 계산됩니다. 예산 설정값만 저장/불러옵니다.</div>
@@ -316,79 +308,25 @@ function fmtD(d) { return d?d.slice(5).replace('-','/'):'−'; }
 function r1(v) { return Math.round(v*10)/10; }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
-// 한국 공휴일 2024~2027 (설날·추석·대체공휴일 포함, 제헌절 포함)
-const KR_HOLIDAYS = new Set([
-  // 2024
-  '2024-01-01',                                          // 신정
-  '2024-02-09','2024-02-10','2024-02-11','2024-02-12',  // 설날+대체
-  '2024-03-01',                                          // 삼일절
-  '2024-05-01',                                          // 근로자의날
-  '2024-05-05','2024-05-06',                             // 어린이날+대체
-  '2024-05-15',                                          // 부처님오신날
-  '2024-06-06',                                          // 현충일
-  '2024-07-17',                                          // 제헌절
-  '2024-08-15',                                          // 광복절
-  '2024-09-16','2024-09-17','2024-09-18',               // 추석
-  '2024-10-03',                                          // 개천절
-  '2024-10-09',                                          // 한글날
-  '2024-12-25',                                          // 크리스마스
-  // 2025
-  '2025-01-01',                                          // 신정
-  '2025-01-28','2025-01-29','2025-01-30',               // 설날
-  '2025-03-01','2025-03-03',                             // 삼일절+대체
-  '2025-05-01',                                          // 근로자의날
-  '2025-05-05','2025-05-06',                             // 어린이날+대체
-  '2025-05-15',                                          // 부처님오신날
-  '2025-06-06',                                          // 현충일
-  '2025-07-17',                                          // 제헌절
-  '2025-08-15',                                          // 광복절
-  '2025-10-05','2025-10-06','2025-10-07','2025-10-08',  // 추석+대체
-  '2025-10-03',                                          // 개천절
-  '2025-10-09',                                          // 한글날
-  '2025-12-25',                                          // 크리스마스
-  // 2026
-  '2026-01-01',                                          // 신정
-  '2026-02-16','2026-02-17','2026-02-18','2026-02-19',  // 설날+대체
-  '2026-03-01','2026-03-02',                             // 삼일절+대체
-  '2026-05-01',                                          // 근로자의날
-  '2026-05-05',                                          // 어린이날
-  '2026-05-24','2026-05-25',                             // 부처님오신날+대체
-  '2026-06-06',                                          // 현충일
-  '2026-07-17',                                          // 제헌절
-  '2026-08-17',                                          // 광복절 대체
-  '2026-09-24','2026-09-25','2026-09-26',               // 추석
-  '2026-10-03','2026-10-05',                             // 개천절+대체
-  '2026-10-09',                                          // 한글날
-  '2026-12-25',                                          // 크리스마스
-  // 2027
-  '2027-01-01',                                          // 신정
-  '2027-02-06','2027-02-07','2027-02-08','2027-02-09',  // 설날+대체
-  '2027-03-01',                                          // 삼일절
-  '2027-05-01',                                          // 근로자의날
-  '2027-05-05',                                          // 어린이날
-  '2027-05-13',                                          // 부처님오신날
-  '2027-06-06',                                          // 현충일
-  '2027-07-17',                                          // 제헌절
-  '2027-08-16',                                          // 광복절 대체
-  '2027-09-14','2027-09-15','2027-09-16',               // 추석
-  '2027-10-03','2027-10-04',                             // 개천절+대체
-  '2027-10-09',                                          // 한글날
-  '2027-12-25','2027-12-27',                             // 크리스마스+대체
-]);
 
 function getBizDays(from, to) {
-  const allHolidays = new Set([...KR_HOLIDAYS, ...(state.foundingDays||[])]);
+  // 스케쥴은 월~금만 있으므로 날짜 범위 내 모든 날 포함
   const days=[],cur=new Date(from+'T00:00:00'),end=new Date(to+'T00:00:00');
   while(cur<=end){
-    const w=cur.getDay(), iso=cur.toISOString().slice(0,10);
-    if(w!==0&&w!==6&&!allHolidays.has(iso)) days.push(iso);
+    days.push(cur.toISOString().slice(0,10));
     cur.setDate(cur.getDate()+1);
   }
   return days;
 }
 function classifyEntry(e) {
   const days=getBizDays(e.dateFrom,e.dateTo);
-  if(!days.length) return {used:0,planned:0};
+  // 영업일이 0인 경우(공휴일만 있는 날 등)에도 입력 시간은 유효
+  // dateFrom 기준으로 완료/예정 분류
+  if(!days.length){
+    return isPast(e.dateFrom)
+      ? {used:e.hours, planned:0}
+      : {used:0, planned:e.hours};
+  }
   const hpd=e.hours/days.length;
   let used=0,planned=0;
   for(const d of days){if(isPast(d))used+=hpd;else planned+=hpd;}
@@ -706,26 +644,7 @@ function removeProject(id) {
 }
 
 // ── 설정 ──
-function addFoundingDay() {
-  const d = document.getElementById('founding-date').value;
-  if (!d) return;
-  if (!state.foundingDays.includes(d)) {
-    state.foundingDays.push(d);
-    state.foundingDays.sort();
-  }
-  document.getElementById('founding-date').value = '';
-  saveState(); renderFoundingDays();
-}
-function removeFoundingDay(d) {
-  state.foundingDays = state.foundingDays.filter(x => x !== d);
-  saveState(); renderFoundingDays();
-}
-function renderFoundingDays() {
-  const el = document.getElementById('founding-list');
-  el.innerHTML = state.foundingDays.length
-    ? state.foundingDays.map(d => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);padding:3px 8px;font-size:12px;margin:2px">${d}<button onclick="removeFoundingDay('${d}')" style="background:none;border:none;cursor:pointer;color:var(--danger-text);font-size:13px;padding:0;line-height:1">×</button></span>`).join('')
-    : '<span style="font-size:12px;color:var(--text3)">등록된 창립기념일 없음</span>';
-}
+
 function saveSettings() {
   const d = document.getElementById('cfg-date').value;
   if (!d) { showMsg('cfg-msg','날짜를 선택해주세요',true); return; }
@@ -990,7 +909,6 @@ function refresh() {
     </div>`).join('') : '<div class="empty">등록된 프로젝트가 없습니다</div>';
 
   document.getElementById('cfg-date').value = state.refDate || '';
-  renderFoundingDays();
 }
 
 function switchTab(tab) {
